@@ -20,6 +20,7 @@ const KEY_PREMIUM = '@sphere/premium/v1';
 const KEY_FREE_USAGE = '@sphere/free_usage/v1';
 const KEY_USER_NAME = '@sphere/user_name/v1';
 const KEY_FOCUS = '@sphere/weekly_focus/v1';
+const KEY_EXPERT = '@sphere/expert_mode/v1';
 // v7 — conversion-funnel keys
 const KEY_FIRST_SEEN     = '@sphere/first_seen/v1';
 const KEY_TRIAL_END      = '@sphere/trial_end/v1';
@@ -508,6 +509,10 @@ type Ctx = {
   weeklyFocus: string;
   setWeeklyFocus: (s: string) => void;
 
+  // v6.2 · expert mode (hide technical HUD by default)
+  expertMode: boolean;
+  setExpertMode: (next: boolean) => void;
+
   ready: boolean;
   t: (key: TKey) => string;
 };
@@ -522,23 +527,26 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [freeUsed, setFreeUsed] = useState<number>(0);
   const [userName, setUserNameState] = useState<string>('');
   const [weeklyFocus, setWeeklyFocusState] = useState<string>('');
+  const [expertMode,  setExpertModeState]  = useState<boolean>(false);
   const [ready, setReady] = useState<boolean>(false);
 
   // hydrate from disk
   useEffect(() => {
     (async () => {
       try {
-        const [storedLang, storedOnb, storedPrem, storedUsage, storedName, storedFocus] = await Promise.all([
+        const [storedLang, storedOnb, storedPrem, storedUsage, storedName, storedFocus, storedExpert] = await Promise.all([
           AsyncStorage.getItem(KEY_LANG),
           AsyncStorage.getItem(KEY_ONBOARDING),
           AsyncStorage.getItem(KEY_PREMIUM),
           AsyncStorage.getItem(KEY_FREE_USAGE),
           AsyncStorage.getItem(KEY_USER_NAME),
           AsyncStorage.getItem(KEY_FOCUS),
+          AsyncStorage.getItem(KEY_EXPERT),
         ]);
         if (storedLang === 'de' || storedLang === 'en') setLangState(storedLang);
         setOnboardingSeen(storedOnb === '1');
         setPremiumState(storedPrem === '1');
+        setExpertModeState(storedExpert === '1');
         if (storedUsage) {
           try {
             const o = JSON.parse(storedUsage);
@@ -624,6 +632,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.setItem(KEY_FOCUS, v).catch(() => {});
   }, []);
 
+  const setExpertMode = useCallback((next: boolean) => {
+    setExpertModeState(next);
+    AsyncStorage.setItem(KEY_EXPERT, next ? '1' : '0').catch(() => {});
+  }, []);
+
   const freeRemaining = Math.max(0, FREE_REPORTS_PER_WEEK - freeUsed);
 
   const value = useMemo<Ctx>(() => ({
@@ -643,14 +656,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setUserName,
     weeklyFocus,
     setWeeklyFocus,
+    expertMode,
+    setExpertMode,
     ready,
     t: (k: TKey) => translate(lang, k),
   }), [
     lang, onboardingSeen, isPremium, weekStart, freeUsed, freeRemaining,
-    userName, weeklyFocus, ready,
+    userName, weeklyFocus, expertMode, ready,
     setLang, markOnboardingSeen, resetOnboarding,
     setPremium, consumeFreeReport, refreshQuota,
-    setUserName, setWeeklyFocus,
+    setUserName, setWeeklyFocus, setExpertMode,
   ]);
 
   return <SettingsCtx.Provider value={value}>{children}</SettingsCtx.Provider>;
@@ -676,6 +691,8 @@ export function useSettings(): Ctx {
       setUserName: () => {},
       weeklyFocus: '',
       setWeeklyFocus: () => {},
+      expertMode: false,
+      setExpertMode: () => {},
       ready: true,
       t: (k: TKey) => translate('de', k),
     };
