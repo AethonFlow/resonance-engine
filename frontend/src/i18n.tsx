@@ -177,6 +177,15 @@ const STRINGS = {
     'home.quota.none':        'Kein freier Eintrag mehr diese Woche',
     'home.quota.unlimited':   'Unbegrenzte Einträge · Premium',
 
+    // ── v6.1 · check-in card (welcome / CTA)
+    'home.checkin.greet.morning':   'Guten Morgen',
+    'home.checkin.greet.afternoon': 'Schön, dass du da bist',
+    'home.checkin.greet.evening':   'Guten Abend',
+    'home.checkin.prompt':          'Schreib einen ehrlichen Satz für heute.',
+    'home.checkin.cta':             'EINTRAG ERSTELLEN',
+    'home.checkin.hint':            '~ 60 Sekunden · Score · Insight · Action',
+    'home.checkin.open':            'VERLAUF ÖFFNEN',
+
     // ── v6 · paywall
     'paywall.title':          'COHERENCE PREMIUM',
     'paywall.sub':             'Stoische Klarheit, jeden Tag',
@@ -381,6 +390,15 @@ const STRINGS = {
     'home.quota.left':        '{{n}} free entries left this week',
     'home.quota.none':        'No free entries left this week',
     'home.quota.unlimited':   'Unlimited entries · Premium',
+
+    // ── v6.1 · check-in card (welcome / CTA)
+    'home.checkin.greet.morning':   'Good morning',
+    'home.checkin.greet.afternoon': 'Glad you are here',
+    'home.checkin.greet.evening':   'Good evening',
+    'home.checkin.prompt':          'Write one honest sentence for today.',
+    'home.checkin.cta':             'NEW ENTRY',
+    'home.checkin.hint':            '~ 60 seconds · score · insight · action',
+    'home.checkin.open':            'OPEN HISTORY',
 
     // ── v6 · paywall
     'paywall.title':          'COHERENCE PREMIUM',

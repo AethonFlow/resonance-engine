@@ -48,6 +48,7 @@ import { SettingsSheet } from '../src/SettingsSheet';
 import { DailyAlignment } from '../src/DailyAlignment';
 import { StreakBadge } from '../src/StreakBadge';
 import { InsightFeed } from '../src/InsightFeed';
+import { CheckInCard } from '../src/CheckInCard';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
@@ -444,6 +445,18 @@ export default function SphereScreen() {
             <StreakBadge current={streak.current} best={streak.best} />
           ) : null}
         </View>
+
+        {/* v6.1 · CHECK-IN CARD — primary CTA / today's status */}
+        <CheckInCard
+          refreshKey={alignmentTick}
+          onPrimaryAction={() => {
+            if (!isPremium && freeRemaining <= 0) {
+              router.push('/paywall');
+            } else {
+              setProbeOpen(true);
+            }
+          }}
+        />
 
         {/* INSIGHT FEED — last 7 insights as scroll cards (3 if free) */}
         <View style={styles.feedRow} pointerEvents="box-none">
