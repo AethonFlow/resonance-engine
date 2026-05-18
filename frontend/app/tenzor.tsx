@@ -22,6 +22,7 @@ import { API, type TenzorInvokeResponseDTO } from '../src/api';
 import { useSettings, useT } from '../src/i18n';
 import { Tooltip } from '../src/Tooltip';
 import { SettingsSheet } from '../src/SettingsSheet';
+import { shareReportText, shareReportPdf, type ExportableReport } from '../src/export';
 
 type FieldState =
   | 'COLD'
@@ -72,12 +73,37 @@ export default function TenzorScreen() {
 
   const onCopy = useCallback(async () => {
     if (!result) return;
-    try {
-      await Share.share({ message: result.report });
-    } catch {
-      Alert.alert('Share unavailable');
-    }
-  }, [result]);
+    const er: ExportableReport = {
+      input:      input.trim(),
+      state:      result.state,
+      score:      result.score,
+      energy:     result.energy,
+      factor:     result.factor,
+      vector_4d:  result.vector_4d,
+      insight:    result.insight,
+      action:     result.action,
+      lang:       result.lang,
+      created_at: new Date().toISOString(),
+    };
+    await shareReportText(er, lang);
+  }, [result, input, lang]);
+
+  const onSharePdf = useCallback(async () => {
+    if (!result) return;
+    const er: ExportableReport = {
+      input:      input.trim(),
+      state:      result.state,
+      score:      result.score,
+      energy:     result.energy,
+      factor:     result.factor,
+      vector_4d:  result.vector_4d,
+      insight:    result.insight,
+      action:     result.action,
+      lang:       result.lang,
+      created_at: new Date().toISOString(),
+    };
+    await shareReportPdf(er, lang);
+  }, [result, input, lang]);
 
   const onClear = useCallback(() => {
     setResult(null);
@@ -274,10 +300,18 @@ export default function TenzorScreen() {
                   <TouchableOpacity
                     onPress={onCopy}
                     style={styles.shareBtn}
-                    testID="tenzor-share"
+                    testID="tenzor-share-text"
                   >
                     <Ionicons name="share-outline" size={14} color={COLORS.textSecondary} />
-                    <Text style={styles.shareText}>{t('tnz.share')}</Text>
+                    <Text style={styles.shareText}>{t('journal.share.text')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={onSharePdf}
+                    style={[styles.shareBtn, { borderColor: COLORS.amber, backgroundColor: 'rgba(245,176,65,0.06)' }]}
+                    testID="tenzor-share-pdf"
+                  >
+                    <Ionicons name="document-outline" size={14} color={COLORS.amber} />
+                    <Text style={[styles.shareText, { color: COLORS.amber }]}>{t('journal.share.pdf')}</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView
@@ -450,7 +484,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   reportHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap',
   },
   shareBtn: {
     marginLeft: 'auto',

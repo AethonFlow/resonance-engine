@@ -39,13 +39,15 @@ import {
   type ResonanceState,
 } from '../src/physics';
 import { createScene, updateScene, SceneRefs } from '../src/scene';
-import { API, type MirrorDTO } from '../src/api';
+import { API, type MirrorDTO, type TenzorStatsDTO } from '../src/api';
 import { layer0Check } from '../src/aspects';
 import { enableAudio, disableAudio, updateTone, isAudioEnabled } from '../src/audio';
 import { useSettings, useT } from '../src/i18n';
 import { Tooltip } from '../src/Tooltip';
 import { SettingsSheet } from '../src/SettingsSheet';
 import { DailyAlignment } from '../src/DailyAlignment';
+import { StreakBadge } from '../src/StreakBadge';
+import { InsightFeed } from '../src/InsightFeed';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 
@@ -90,6 +92,21 @@ export default function SphereScreen() {
   const [layer0Hint, setLayer0Hint] = useState<string>('');
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [alignmentTick, setAlignmentTick] = useState<number>(0);
+  const [streak, setStreak] = useState<{ current: number; best: number } | null>(null);
+
+  // Fetch streak whenever alignmentTick changes (and on mount)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const s = await API.tenzorStats(30);
+        if (active) setStreak({ current: s.streak_current, best: s.streak_best });
+      } catch {
+        if (active) setStreak(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [alignmentTick]);
 
   // HUD ticker
   useEffect(() => {
@@ -419,9 +436,17 @@ export default function SphereScreen() {
           </View>
         </View>
 
-        {/* DAILY ALIGNMENT pill */}
+        {/* DAILY ALIGNMENT pill + STREAK */}
         <View style={styles.alignmentRow} pointerEvents="box-none">
           <DailyAlignment refreshKey={alignmentTick} />
+          {streak ? (
+            <StreakBadge current={streak.current} best={streak.best} />
+          ) : null}
+        </View>
+
+        {/* INSIGHT FEED — last 7 insights as scroll cards */}
+        <View style={styles.feedRow} pointerEvents="box-none">
+          <InsightFeed refreshKey={alignmentTick} limit={7} />
         </View>
 
         {/* SING INDEX vertical bar (right edge) */}
@@ -863,8 +888,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 8 : 16,
   },
   alignmentRow: {
-    alignItems: 'center', justifyContent: 'center',
-    paddingTop: 6, paddingBottom: 2,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingTop: 6, paddingBottom: 2, gap: 6,
+  },
+  feedRow: {
+    paddingTop: 2, paddingBottom: 6,
   },
   hudBlockLeft:  { alignItems: 'flex-start', minWidth: 90 },
   hudBlockRight: { alignItems: 'flex-end',  minWidth: 90 },

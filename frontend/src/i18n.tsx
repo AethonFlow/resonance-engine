@@ -127,6 +127,18 @@ const STRINGS = {
     'journal.spark.low':     '↓',
     'tip.aligned':           'Tägliche Ausrichtung · Sobald du heute mindestens einen TENZOR-Aufruf mit Score ≥ 0.60 hast, gilt der Tag als „ausgerichtet".',
     'tip.sparkline':         'Kohärenz-Verlauf · Maximaler Score pro Tag der letzten 7 Tage. Steigend → Vertrauen wächst.',
+    'tip.streak':            'Streak · Aufeinanderfolgende Tage mit Ausrichtung. Heute zählt mit, sobald ein TENZOR-Score ≥ 0.60 erreicht ist.',
+    'tip.journal_feed':      'Insight-Feed · Deine letzten 7 Resonanzberichte als blätterbare Karten. Antippen → Details.',
+
+    // ── journal feed
+    'journal.feed.title':    'INSIGHT FEED',
+    'journal.feed.all':      'Alle',
+    'journal.feed.empty':    'noch kein Eintrag',
+    'journal.range.7':       '7 TAGE',
+    'journal.range.30':      '30 TAGE',
+    'journal.streak_unit':   ' Tag(e) in Folge',
+    'journal.share.text':    'Als Text teilen',
+    'journal.share.pdf':     'Als PDF teilen',
 
     // ── notifications
     'notif.permission_title': 'Erinnerung erlauben?',
@@ -238,6 +250,18 @@ const STRINGS = {
     'journal.spark.low':     '↓',
     'tip.aligned':           'Daily Alignment · Once you have at least one TENZOR call today with score ≥ 0.60, the day counts as "aligned".',
     'tip.sparkline':         'Coherence trace · Daily peak score over the last 7 days. Rising → confidence builds.',
+    'tip.streak':            'Streak · Consecutive aligned days. Today counts the moment a TENZOR score ≥ 0.60 is reached.',
+    'tip.journal_feed':      'Insight feed · Your last 7 resonance reports as swipeable cards. Tap → details.',
+
+    // ── journal feed
+    'journal.feed.title':    'INSIGHT FEED',
+    'journal.feed.all':      'All',
+    'journal.feed.empty':    'no entries yet',
+    'journal.range.7':       '7 DAYS',
+    'journal.range.30':      '30 DAYS',
+    'journal.streak_unit':   ' day(s) in a row',
+    'journal.share.text':    'Share as text',
+    'journal.share.pdf':     'Share as PDF',
 
     // ── notifications
     'notif.permission_title': 'Allow reminders?',

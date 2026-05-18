@@ -127,7 +127,20 @@ export type TenzorStatsDTO = {
   today_count:    number;
   today_score:    number | null;
   today_state:    string | null;
+  streak_current: number;
+  streak_best:    number;
   series:         TenzorDayDTO[];
+};
+
+export type TenzorJournalEntryDTO = {
+  id:         string;
+  created_at: string;
+  input:      string;
+  state:      string;
+  score:      number;
+  insight:    string;
+  action:     string;
+  lang:       'de' | 'en';
 };
 
 export const API = {
@@ -190,5 +203,8 @@ export const API = {
   },
   async tenzorStats(days = 7): Promise<TenzorStatsDTO> {
     return (await api.get('/tenzor/stats', { params: { days } })).data;
+  },
+  async tenzorJournal(limit = 7): Promise<TenzorJournalEntryDTO[]> {
+    return (await api.get('/tenzor/journal', { params: { limit } })).data;
   },
 };

@@ -91,6 +91,47 @@ backend:
             ✓ GET /api/tenzor/stats?days=-5  -> HTTP 200, days=1,  len(series)=1
             ✓ GET /api/tenzor/stats?days=200 -> HTTP 200, days=60, len(series)=60
           Verdict: days clamping now correct in all branches. Endpoint fully working.
+      - working: true
+        agent: "testing"
+        comment: |
+          v5 regression executed against public ingress
+          https://resonance-engine-1.preview.emergentagent.com/api.
+          Result: 442 assertions / 442 PASS / 0 FAIL.
+
+          NEW v5 assertions ALL PASS:
+            ✓ S) GET /tenzor/stats (default + days=30) — top-level keys
+                 now include streak_current and streak_best, both non-neg
+                 ints, streak_current <= streak_best, streak_best <= days.
+            ✓ T) Streak logic sequential:
+                 - DELETE /tenzor/history (clear) → 200
+                 - GET /tenzor/stats?days=7 → streak_current=0, streak_best=0
+                 - POST /tenzor/invoke "I am about to start." en
+                     → score 0.742, state=WARM
+                 - GET /tenzor/stats?days=7 → streak_current=1, streak_best=1
+                 - POST /tenzor/invoke "x" (layer-0 fail, NOT saved)
+                     → state=INSUFFICIENT_DATA
+                 - GET /tenzor/stats?days=7 → streak_current STILL 1
+            ✓ U) GET /tenzor/journal → HTTP 200, list, len <= 7,
+                 newest first (created_at DESC), each entry has keys
+                 id/created_at/input/state/score/insight/action/lang;
+                 score is float; lang in {de, en}.
+            ✓ V) GET /tenzor/journal?limit=1 → HTTP 200, len == 1.
+            ✓ W) limit=0 → HTTP 200, len == 1 (clamped to 1).
+                 limit=200 → HTTP 200, len <= 30 (clamped to 30).
+            ✓ X) Regression: v1+v2+v3+v4 still green — invoke happy/DE/EN,
+                 layer-0 DE+EN, validation 422, boundary 2000 OK / 2001 → 422,
+                 /tenzor meta (timeout_ms=8000), history list/delete/clear,
+                 save=false (no insert), /, /health, /houses (8), /aspects (8),
+                 /probe, /tune, presets CRUD, snapshots CRUD, stats default,
+                 days=1/60, clamping 0/-5/200, round-trip layer-0 doesn't bump count.
+
+          Timing (3 wall-clock samples GET /tenzor/stats default):
+              min = 115 ms, avg = 146 ms, max = 164 ms.
+          Invoke timing: happy 7183/2006/2306 ms; EN 1966/1718 ms;
+          DE 1713/1744 ms.
+
+          Verdict: streak fields + journal feed fully working. Endpoint
+          fully correct, no regressions.
 
 frontend:
   - task: "Sparkline component (react-native-svg)"
@@ -259,6 +300,32 @@ agent_communication:
          /, /health, /houses (8), /aspects (8), /probe, /tune,
          presets CRUD, snapshots CRUD.
 
-      Base URL:  https://resonance-engine-1.preview.emergentagent.com/api
-      Auth:      none.
-      DO NOT modify any backend file. DO NOT run any frontend test.
+  - agent: "testing"
+    message: |
+      v5 backend run COMPLETE against public ingress.
+      442 assertions / 442 PASS / 0 FAIL.
+
+      NEW v5 endpoints verified:
+        • GET /api/tenzor/stats now exposes streak_current + streak_best
+          (non-neg int, current <= best, best <= days).
+        • Streak logic sequential (clear → invoke happy → stats → layer-0
+          → stats): 0→1→1 transitions correct, layer-0 input='x' does
+          NOT bump streak (not saved).
+        • GET /api/tenzor/journal: default limit=7, list newest-first,
+          each entry has id/created_at/input/state/score/insight/action/lang.
+        • limit=1 returns exactly 1. limit=0 clamped to 1. limit=200
+          clamped to 30 (len <= 30).
+
+      Full v1+v2+v3+v4 regression also green: invoke DE/EN happy + layer-0,
+      validation 422 (empty body / empty string), boundary 2000 OK/2001 422,
+      /tenzor meta timeout_ms=8000, /tenzor/history list/delete/clear,
+      save=false (no insert), /, /health, /houses (8), /aspects (8),
+      /probe, /tune, presets CRUD, snapshots CRUD, stats days=1/7/60,
+      clamping 0/-5/200, round-trip count semantics.
+
+      /api/tenzor/stats wall-clock (3 samples, default days=7):
+          min = 115 ms, avg = 146 ms, max = 164 ms.
+
+      Only v5 S/T/U/V/W test functions appended to /app/backend_test.py;
+      STATS_TOP_KEYS extended to include streak_current/streak_best.
+      No other change; NO backend / frontend / .env / supervisor files touched.

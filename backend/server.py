@@ -798,6 +798,36 @@ async def tenzor_stats(days: int = 7):
 
     today = now_utc.strftime("%Y-%m-%d")
     today_entry = out[-1]
+
+    # ── Streaks (consecutive aligned days, ending today OR yesterday) ──
+    # We allow "today not yet aligned" to still count the streak that ended yesterday,
+    # so the user doesn't lose the streak just because they have not invoked yet today.
+    aligned_flags = [bool(b["aligned"]) for b in out]
+    streak_current = 0
+    # Walk back from the most recent day. If today is aligned -> start at -1.
+    # If today is NOT aligned but yesterday IS -> start at -2 (streak still alive today).
+    # If today is NOT aligned and yesterday is NOT aligned -> streak = 0.
+    if aligned_flags and aligned_flags[-1]:
+        i = len(aligned_flags) - 1
+        while i >= 0 and aligned_flags[i]:
+            streak_current += 1
+            i -= 1
+    elif len(aligned_flags) >= 2 and aligned_flags[-2]:
+        i = len(aligned_flags) - 2
+        while i >= 0 and aligned_flags[i]:
+            streak_current += 1
+            i -= 1
+
+    # Best streak inside the window
+    streak_best = 0
+    cur = 0
+    for f in aligned_flags:
+        if f:
+            cur += 1
+            streak_best = max(streak_best, cur)
+        else:
+            cur = 0
+
     return {
         "days":          days,
         "today":         today,
@@ -805,8 +835,39 @@ async def tenzor_stats(days: int = 7):
         "today_count":   int(today_entry["count"]),
         "today_score":   today_entry["max_score"],
         "today_state":   today_entry["last_state"],
+        "streak_current": int(streak_current),
+        "streak_best":    int(streak_best),
         "series":        out,
     }
+
+
+@api.get("/tenzor/journal")
+async def tenzor_journal(limit: int = 7):
+    """
+    The last N saved INSIGHTs as a lightweight feed for the Home screen
+    journal carousel. Ordered newest first, capped 1..30.
+    Each entry: { id, created_at, input, state, score, insight, action, lang }.
+    """
+    limit = max(1, min(30, int(limit if limit is not None else 7)))
+    docs = (
+        await db.tenzor_history
+        .find({}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(limit)
+    )
+    out: list[dict] = []
+    for d in docs:
+        out.append({
+            "id":         d.get("id"),
+            "created_at": d.get("created_at"),
+            "input":      d.get("input", ""),
+            "state":      d.get("state"),
+            "score":      float(d.get("score") or 0.0),
+            "insight":    d.get("insight", ""),
+            "action":     d.get("action", ""),
+            "lang":       d.get("lang", "de"),
+        })
+    return out
 
 
 @api.delete("/tenzor/history/{entry_id}")

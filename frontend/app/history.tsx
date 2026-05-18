@@ -21,9 +21,10 @@ import * as Haptics from 'expo-haptics';
 
 import { COLORS, TYPO } from '../src/design';
 import { API, type TenzorHistoryDTO, type TenzorStatsDTO } from '../src/api';
-import { useT } from '../src/i18n';
+import { useT, useSettings } from '../src/i18n';
 import { Sparkline } from '../src/Sparkline';
 import { Tooltip } from '../src/Tooltip';
+import { shareReportText, shareReportPdf, fromHistory } from '../src/export';
 
 const stateColor = (s: string): string => {
   switch (s) {
@@ -39,16 +40,18 @@ const stateColor = (s: string): string => {
 export default function HistoryScreen() {
   const router = useRouter();
   const t = useT();
+  const { lang } = useSettings();
   const [items, setItems] = useState<TenzorHistoryDTO[] | null>(null);
   const [stats, setStats] = useState<TenzorStatsDTO | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [range, setRange] = useState<7 | 30>(7);
 
   const load = useCallback(async () => {
     try {
       const [arr, st] = await Promise.all([
         API.tenzorHistory(20),
-        API.tenzorStats(7).catch(() => null),
+        API.tenzorStats(range).catch(() => null),
       ]);
       setItems(arr);
       setStats(st);
@@ -56,7 +59,7 @@ export default function HistoryScreen() {
       setItems([]);
       setStats(null);
     }
-  }, []);
+  }, [range]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -120,7 +123,7 @@ export default function HistoryScreen() {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.amber} />}
       >
-        {/* 7-day coherence sparkline */}
+        {/* 7-day / 30-day coherence sparkline */}
         <View style={styles.sparkRow}>
           <View style={{ flex: 1 }}>
             <Sparkline series={stats?.series ?? []} />
@@ -128,6 +131,41 @@ export default function HistoryScreen() {
           <View style={styles.sparkTip}>
             <Tooltip text={t('tip.sparkline')} size={14} testID="tip-sparkline" />
           </View>
+        </View>
+
+        {/* Range toggle (7 / 30 days) */}
+        <View style={styles.rangeRow}>
+          <TouchableOpacity
+            testID="range-7"
+            onPress={() => setRange(7)}
+            style={[styles.rangeBtn, range === 7 && styles.rangeBtnActive]}
+          >
+            <Text style={[styles.rangeText, range === 7 && styles.rangeTextActive]}>
+              {t('journal.range.7')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID="range-30"
+            onPress={() => setRange(30)}
+            style={[styles.rangeBtn, range === 30 && styles.rangeBtnActive]}
+          >
+            <Text style={[styles.rangeText, range === 30 && styles.rangeTextActive]}>
+              {t('journal.range.30')}
+            </Text>
+          </TouchableOpacity>
+          {stats ? (
+            <View style={styles.streakInline}>
+              <MaterialCommunityIcons
+                name={stats.streak_current > 0 ? 'fire' : 'fire-off'}
+                size={14}
+                color={stats.streak_current > 0 ? COLORS.amber : COLORS.textMuted}
+              />
+              <Text style={styles.streakInlineText}>
+                {stats.streak_current}{t('journal.streak_unit')}
+              </Text>
+              <Text style={styles.streakBest}>{`(best ${stats.streak_best})`}</Text>
+            </View>
+          ) : null}
         </View>
 
         {items === null ? (
@@ -194,14 +232,36 @@ export default function HistoryScreen() {
                       <Text style={[styles.blockLabel, { color: COLORS.amber }]}>{t('tnz.action')}</Text>
                       <Text style={styles.blockText}>{e.action}</Text>
                     </View>
-                    <TouchableOpacity
-                      onPress={() => onDeleteOne(e.id)}
-                      style={styles.deleteBtn}
-                      testID={`history-delete-${e.id}`}
-                    >
-                      <Ionicons name="trash-outline" size={14} color={COLORS.crimson} />
-                      <Text style={styles.deleteText}>{t('common.delete')}</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity
+                        onPress={() => shareReportText(fromHistory(e), lang)}
+                        style={[styles.shareBtn, { borderColor: COLORS.textSecondary }]}
+                        testID={`share-text-${e.id}`}
+                      >
+                        <Ionicons name="document-text-outline" size={14} color={COLORS.textSecondary} />
+                        <Text style={[styles.shareText, { color: COLORS.textSecondary }]}>
+                          {t('journal.share.text')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => shareReportPdf(fromHistory(e), lang)}
+                        style={[styles.shareBtn, { borderColor: COLORS.amber, backgroundColor: 'rgba(245,176,65,0.06)' }]}
+                        testID={`share-pdf-${e.id}`}
+                      >
+                        <Ionicons name="document-outline" size={14} color={COLORS.amber} />
+                        <Text style={[styles.shareText, { color: COLORS.amber }]}>
+                          {t('journal.share.pdf')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => onDeleteOne(e.id)}
+                        style={styles.deleteBtn}
+                        testID={`history-delete-${e.id}`}
+                      >
+                        <Ionicons name="trash-outline" size={14} color={COLORS.crimson} />
+                        <Text style={styles.deleteText}>{t('common.delete')}</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : null}
               </TouchableOpacity>
@@ -240,6 +300,42 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginLeft: 2,
   },
+
+  rangeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 4, marginTop: 4, flexWrap: 'wrap',
+  },
+  rangeBtn: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+    borderWidth: 1, borderColor: COLORS.panelBorder,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    minHeight: 32,
+  },
+  rangeBtnActive: { borderColor: COLORS.amber, backgroundColor: 'rgba(245,176,65,0.08)' },
+  rangeText: { fontFamily: TYPO.monoBold, fontSize: 10, color: COLORS.textSecondary, letterSpacing: 2 },
+  rangeTextActive: { color: COLORS.amber },
+
+  streakInline: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    marginLeft: 'auto',
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1, borderColor: COLORS.panelBorder,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  streakInlineText: { fontFamily: TYPO.monoBold, fontSize: 10, color: COLORS.textPrimary, letterSpacing: 1 },
+  streakBest: { fontFamily: TYPO.mono, fontSize: 9, color: COLORS.textMuted, letterSpacing: 0.5 },
+
+  actionRow: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 6,
+    marginTop: 4,
+  },
+  shareBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 6, borderWidth: 1,
+  },
+  shareText: { fontFamily: TYPO.mono, fontSize: 10, letterSpacing: 1 },
 
   emptyBox: {
     paddingVertical: 80, alignItems: 'center', justifyContent: 'center', gap: 14,
@@ -294,6 +390,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 6, borderWidth: 1, borderColor: 'rgba(255,60,95,0.4)',
+    marginLeft: 'auto',
   },
   deleteText: { fontFamily: TYPO.monoBold, fontSize: 9, color: COLORS.crimson, letterSpacing: 1.5 },
 });
