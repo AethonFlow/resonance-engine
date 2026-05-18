@@ -1,0 +1,34 @@
+{
+  "flows": [
+    {
+      "id": "tenzor_invoke",
+      "name": "Single-Pass Resonance Invocation",
+      "mode": "single-pass",
+      "timeout_ms": 8000,
+      "contract": {
+        "input_schema":  { "input": "string" },
+        "output_format": "RESONANCE_REPORT",
+        "no_loops":     true,
+        "no_self_correction": true,
+        "no_speculation":     true,
+        "deterministic_after_probe": true
+      },
+      "steps": [
+        { "id": "ingest",        "type": "ingest",         "description": "Accept JSON body { input: string }" },
+        { "id": "layer0",        "type": "gate",           "module": "aspects.layer0_check" },
+        { "id": "probe",         "type": "llm",            "model": "claude-haiku-4-5-20251001", "operators": 8 },
+        { "id": "aspect_matrix", "type": "deterministic",  "function": "apply_aspect_matrix_py" },
+        { "id": "sing_index",    "type": "deterministic",  "function": "_compute_sing_index" },
+        { "id": "vector_4d",     "type": "deterministic",  "function": "build_vector_4d", "formula": "[cos\u03b8, sin\u03b8, -sin\u03b8, cos\u03b8]" },
+        { "id": "hamiltonian",   "type": "deterministic",  "constant": 0.5 },
+        { "id": "resonant_field","type": "passthrough",    "description": "Deterministic field map; no LLM call." },
+        { "id": "synthesize",    "type": "format",         "template_file": "tenzor_orchestrator.txt" }
+      ],
+      "fail_safe": {
+        "coherence_score": 0.00,
+        "factor": "INSUFFICIENT_DATA",
+        "resonant_agent": "INSUFFICIENT_DATA"
+      }
+    }
+  ]
+}

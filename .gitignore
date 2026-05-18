@@ -1,0 +1,102 @@
+# ─────────────────────────────────────────────────────────────
+# THE SPHERE / Resonance Engine · .gitignore
+# Expo + FastAPI + MongoDB
+# ─────────────────────────────────────────────────────────────
+
+# ── Dependencies ────────────────────────────────────────────
+node_modules/
+**/node_modules/
+.yarn/
+.pnp.*
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ── Environment & secrets ───────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Expo / React Native ─────────────────────────────────────
+.expo/
+.expo-shared/
+expo-env.d.ts
+web-build/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.orig.*
+ios/
+android/
+.metro-health-check*
+
+# ── Builds & caches ─────────────────────────────────────────
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.turbo/
+coverage/
+.nyc_output/
+
+# ── Logs ────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Database ────────────────────────────────────────────────
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# ── IDE / OS ────────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ── Test reports ────────────────────────────────────────────
+/test_reports/
+/tests/__pycache__/
+backend/tests/__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+pytest-results.xml
+
+# ── Project-specific ────────────────────────────────────────
+/app/test_reports/
+/app/memory/test_credentials.md
+/tmp/
+backend_test.py
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials

@@ -1,0 +1,12 @@
+{
+  "agents": [
+    {
+      "id": "tenzor",
+      "name": "TENZOR Orchestrator",
+      "type": "llm",
+      "system_prompt_file": "tenzor_orchestrator.txt",
+      "mode": "single-pass",
+      "timeout_ms": 8000
+    }
+  ]
+}
