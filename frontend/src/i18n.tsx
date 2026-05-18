@@ -20,8 +20,14 @@ const KEY_PREMIUM = '@sphere/premium/v1';
 const KEY_FREE_USAGE = '@sphere/free_usage/v1';
 const KEY_USER_NAME = '@sphere/user_name/v1';
 const KEY_FOCUS = '@sphere/weekly_focus/v1';
+// v7 — conversion-funnel keys
+const KEY_FIRST_SEEN     = '@sphere/first_seen/v1';
+const KEY_TRIAL_END      = '@sphere/trial_end/v1';
+const KEY_SOFT_PAYWALL   = '@sphere/soft_paywall_shown/v1';
+const KEY_REVIEW_SHOWN   = '@sphere/review_shown/v1';
 
 export const FREE_REPORTS_PER_WEEK = 7;
+export const TRIAL_DAYS            = 7;
 
 function isoWeekStart(date: Date = new Date()): string {
   // ISO week starts on Monday.
@@ -217,6 +223,31 @@ const STRINGS = {
     'set.name':               'Dein Name',
     'set.focus':              'Wochenfokus',
     'set.version':            'Version',
+
+    // ── v7 · conversion funnel
+    'onb.try.title':          'Dein erster Eintrag',
+    'onb.try.body':           'Schreib einen ehrlichen Satz über das, was dich heute bewegt. Du bekommst sofort deinen ersten Insight.',
+    'onb.try.placeholder':    'z.B. "Ich starte heute ein neues Projekt."',
+    'onb.try.cta':            'Insight erzeugen',
+    'onb.try.skip':           'Später',
+    'onb.try.result':         'Dein erster Insight',
+    'onb.try.continue':       'Loslegen',
+    'onb.try.error':          'Eingabe zu dünn — schreib einen vollständigen Satz.',
+
+    'soft.title':             'Drei Tage stabil',
+    'soft.body':              'Du hast eine Streak von {{n}} Tagen aufgebaut. Verlier sie nicht.',
+    'soft.benefit':           'Premium sichert deine Entwicklung — unbegrenzte Einträge, 30-Tage-Verlauf, PDF-Export.',
+    'soft.cta':               '7 Tage gratis testen',
+    'soft.later':             'Nicht jetzt',
+
+    'trial.cta':              'Jetzt 7 Tage gratis testen',
+    'trial.sub':              'Dann 19,99 € / Jahr · jederzeit kündbar',
+    'trial.active':           'Trial läuft · noch {{n}} Tag(e)',
+    'trial.expired':          'Trial beendet',
+    'trial.dev_start':        'DEV · Trial starten (7 Tage)',
+
+    'review.title':           'Die Sphäre singt',
+    'review.body':            'Du hast soeben SINGING erreicht. Wenn dir die App hilft, hilf ihr mit einer kurzen Bewertung.',
   },
 
   en: {
@@ -397,6 +428,31 @@ const STRINGS = {
     'set.name':               'Your name',
     'set.focus':              'Weekly focus',
     'set.version':            'Version',
+
+    // ── v7 · conversion funnel
+    'onb.try.title':          'Your first entry',
+    'onb.try.body':           'Write one honest sentence about what is moving you today. You will see your first insight immediately.',
+    'onb.try.placeholder':    'e.g. "I am starting a new project today."',
+    'onb.try.cta':            'Generate insight',
+    'onb.try.skip':           'Later',
+    'onb.try.result':         'Your first insight',
+    'onb.try.continue':       'Continue',
+    'onb.try.error':          'Input too thin — write a complete sentence.',
+
+    'soft.title':             'Three days steady',
+    'soft.body':              'You have built a streak of {{n}} days. Do not lose it.',
+    'soft.benefit':           'Premium protects your progress — unlimited entries, 30-day history, PDF export.',
+    'soft.cta':               'Try 7 days free',
+    'soft.later':             'Not now',
+
+    'trial.cta':              'Start 7-day free trial',
+    'trial.sub':              'Then €19.99 / year · cancel anytime',
+    'trial.active':           'Trial active · {{n}} day(s) left',
+    'trial.expired':          'Trial ended',
+    'trial.dev_start':        'DEV · start trial (7 days)',
+
+    'review.title':           'The Sphere is singing',
+    'review.body':            'You just reached SINGING. If the app helps you, please leave a short review.',
   },
 } as const;
 
