@@ -16,6 +16,20 @@ export type Lang = 'de' | 'en';
 
 const KEY_LANG = '@sphere/lang/v1';
 const KEY_ONBOARDING = '@sphere/onboarding_seen/v1';
+const KEY_PREMIUM = '@sphere/premium/v1';
+const KEY_FREE_USAGE = '@sphere/free_usage/v1';
+const KEY_USER_NAME = '@sphere/user_name/v1';
+const KEY_FOCUS = '@sphere/weekly_focus/v1';
+
+export const FREE_REPORTS_PER_WEEK = 7;
+
+function isoWeekStart(date: Date = new Date()): string {
+  // ISO week starts on Monday.
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay() || 7;
+  if (day !== 1) d.setUTCDate(d.getUTCDate() - (day - 1));
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+}
 
 const STRINGS = {
   de: {
@@ -73,8 +87,8 @@ const STRINGS = {
     'hud.sing':              'SING',
 
     // ── probe modal (legacy TUNE)
-    'tune.title':            'STIMME DAS FELD',
-    'tune.title_mirror':     'PROJECT MIRROR',
+    'tune.title':            'EINTRAG ERSTELLEN',
+    'tune.title_mirror':     'SPIEGEL',
     'tune.body':             'Was möchtest du der Sphäre sagen? Eine klare Intention reicht.',
     'tune.placeholder':      'z.B. "Ich starte einen Podcast"',
     'tune.cancel':           'ABBRECHEN',
@@ -146,6 +160,63 @@ const STRINGS = {
     'notif.daily.title':      'Wie ist dein Feld heute?',
     'notif.daily.body':       'Eine Eingabe in TENZOR reicht. Öffne die Sphäre.',
     'notif.unsupported':      'Auf dieser Plattform sind Push-Erinnerungen nicht verfügbar. Die Einstellung ist sicher gespeichert.',
+
+    // ── v6 · check-in & ritual
+    'home.checkin':           'Neuer Check-in',
+    'home.checkin.second':    'Zweiten Check-in (Premium)',
+    'home.checkin.done_today':'Heute schon eingetragen',
+    'home.checkin.empty_today':'Heute noch kein Eintrag',
+    'home.streak.title':      'STREAK',
+    'home.quota.left':        'Noch {{n}} freie Einträge diese Woche',
+    'home.quota.none':        'Kein freier Eintrag mehr diese Woche',
+    'home.quota.unlimited':   'Unbegrenzte Einträge · Premium',
+
+    // ── v6 · paywall
+    'paywall.title':          'COHERENCE PREMIUM',
+    'paywall.sub':             'Stoische Klarheit, jeden Tag',
+    'paywall.feat.unlimited': 'Unbegrenzte Einträge',
+    'paywall.feat.export':    'Unbegrenzter PDF-Export',
+    'paywall.feat.history':   '30-Tage-Verlauf',
+    'paywall.feat.journal':   'Unbegrenztes Insight-Journal',
+    'paywall.plan.month':     'MONATLICH',
+    'paywall.plan.year':      'JÄHRLICH',
+    'paywall.plan.month.price':'4,99 € / Monat',
+    'paywall.plan.year.price': '19,99 € / Jahr',
+    'paywall.plan.year.save': 'spare 67 %',
+    'paywall.cta':            'Premium freischalten',
+    'paywall.restore':        'Kauf wiederherstellen',
+    'paywall.simulate':       'DEV · Premium aktivieren',
+    'paywall.simulate.off':   'DEV · Premium deaktivieren',
+    'paywall.legal':           'Test-Build · Kauf-Funktion folgt im Store-Release',
+    'paywall.locked':         'Diese Funktion ist Teil von Premium.',
+
+    // ── v6 · onboarding (rewrite)
+    'onb1.title':             '60 Sekunden Klarheit pro Tag',
+    'onb1.body':              'Ein Satz rein — ein klarer Bericht raus. Score, Insight und nächste Aktion in unter zwei Sekunden.',
+    'onb2.title':             'Streak hält dich stabil',
+    'onb2.body':              'Trag jeden Tag einen Gedanken ein. Deine Streak und der 7-Tage-Verlauf zeigen, wo du wirklich stehst.',
+    'onb3.title':             'Teile deine Entwicklung',
+    'onb3.body':              'Jeden Bericht als sauberes PDF exportieren — für dich, deinen Coach oder deine Therapeutin.',
+    'onb.name.title':         'Wie sollen wir dich nennen?',
+    'onb.name.placeholder':   'Vorname (optional)',
+    'onb.focus.title':        'Was ist dein Fokus diese Woche?',
+    'onb.focus.placeholder':  'z.B. "Klarer bei Entscheidungen werden"',
+    'onb.focus.skip':         'Überspringen',
+
+    // ── v6 · legal
+    'legal.privacy':          'Datenschutz',
+    'legal.imprint':          'Impressum',
+    'legal.disclaimer':       'Kein medizinisches Produkt — kein Ersatz für Therapie oder Diagnose.',
+    'legal.contact':          'Kontakt',
+
+    // ── v6 · settings
+    'set.premium.status':     'Premium-Status',
+    'set.premium.active':     'AKTIV',
+    'set.premium.inactive':   'NICHT AKTIV',
+    'set.premium.upgrade':    'Auf Premium upgraden',
+    'set.name':               'Dein Name',
+    'set.focus':              'Wochenfokus',
+    'set.version':            'Version',
   },
 
   en: {
@@ -198,8 +269,8 @@ const STRINGS = {
     'hud.minus_r0':          '1 − R₀',
     'hud.sing':              'SING',
 
-    'tune.title':            'TUNE THE FIELD',
-    'tune.title_mirror':     'PROJECT MIRROR',
+    'tune.title':            'NEW ENTRY',
+    'tune.title_mirror':     'MIRROR',
     'tune.body':             'What do you want to tell the sphere? One clear intention is enough.',
     'tune.placeholder':      'e.g. "I am starting a podcast"',
     'tune.cancel':           'CANCEL',
@@ -269,6 +340,63 @@ const STRINGS = {
     'notif.daily.title':      'How is your field today?',
     'notif.daily.body':       'One TENZOR call is enough. Open the sphere.',
     'notif.unsupported':      'Push reminders are not available on this platform. Your preference is saved safely.',
+
+    // ── v6 · check-in & ritual
+    'home.checkin':           'New check-in',
+    'home.checkin.second':    'Second check-in (Premium)',
+    'home.checkin.done_today':'Logged today',
+    'home.checkin.empty_today':'No entry yet today',
+    'home.streak.title':      'STREAK',
+    'home.quota.left':        '{{n}} free entries left this week',
+    'home.quota.none':        'No free entries left this week',
+    'home.quota.unlimited':   'Unlimited entries · Premium',
+
+    // ── v6 · paywall
+    'paywall.title':          'COHERENCE PREMIUM',
+    'paywall.sub':             'Stoic clarity, every day',
+    'paywall.feat.unlimited': 'Unlimited entries',
+    'paywall.feat.export':    'Unlimited PDF export',
+    'paywall.feat.history':   '30-day history',
+    'paywall.feat.journal':   'Unlimited insight journal',
+    'paywall.plan.month':     'MONTHLY',
+    'paywall.plan.year':      'YEARLY',
+    'paywall.plan.month.price':'€4.99 / month',
+    'paywall.plan.year.price': '€19.99 / year',
+    'paywall.plan.year.save': 'save 67 %',
+    'paywall.cta':            'Unlock premium',
+    'paywall.restore':        'Restore purchase',
+    'paywall.simulate':       'DEV · enable premium',
+    'paywall.simulate.off':   'DEV · disable premium',
+    'paywall.legal':           'Test build · in-app purchase ships with the store release',
+    'paywall.locked':         'This feature is part of Premium.',
+
+    // ── v6 · onboarding (rewrite)
+    'onb1.title':             '60 seconds of clarity a day',
+    'onb1.body':              'One sentence in — one clean report out. Score, insight, and next action in under two seconds.',
+    'onb2.title':             'Streak keeps you steady',
+    'onb2.body':              'Log one thought every day. Your streak and 7-day trace show where you really stand.',
+    'onb3.title':             'Share your trajectory',
+    'onb3.body':              'Export every report as a clean PDF — for yourself, your coach, or your therapist.',
+    'onb.name.title':         'What should we call you?',
+    'onb.name.placeholder':   'First name (optional)',
+    'onb.focus.title':        'What is your focus this week?',
+    'onb.focus.placeholder':  'e.g. "Get clearer about decisions"',
+    'onb.focus.skip':         'Skip',
+
+    // ── v6 · legal
+    'legal.privacy':          'Privacy',
+    'legal.imprint':          'Imprint',
+    'legal.disclaimer':       'Not a medical product — not a substitute for therapy or diagnosis.',
+    'legal.contact':          'Contact',
+
+    // ── v6 · settings
+    'set.premium.status':     'Premium status',
+    'set.premium.active':     'ACTIVE',
+    'set.premium.inactive':   'NOT ACTIVE',
+    'set.premium.upgrade':    'Upgrade to Premium',
+    'set.name':               'Your name',
+    'set.focus':              'Weekly focus',
+    'set.version':            'Version',
   },
 } as const;
 
@@ -285,6 +413,27 @@ type Ctx = {
   onboardingSeen: boolean;
   markOnboardingSeen: () => void;
   resetOnboarding: () => void;
+
+  // v6 · premium
+  isPremium: boolean;
+  setPremium: (next: boolean) => void;
+
+  // v6 · free-quota
+  weekStart: string;
+  freeUsed: number;
+  freeRemaining: number;
+  /** Returns true if the caller may proceed (and increments the counter),
+      false if the weekly limit is reached and the user is not premium. */
+  consumeFreeReport: () => boolean;
+  /** Re-sync from storage; called after a real network success. */
+  refreshQuota: () => Promise<void>;
+
+  // v6 · user profile
+  userName: string;
+  setUserName: (n: string) => void;
+  weeklyFocus: string;
+  setWeeklyFocus: (s: string) => void;
+
   ready: boolean;
   t: (key: TKey) => string;
 };
@@ -294,18 +443,46 @@ const SettingsCtx = createContext<Ctx | null>(null);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>('de');
   const [onboardingSeen, setOnboardingSeen] = useState<boolean>(true);
+  const [isPremium, setPremiumState] = useState<boolean>(false);
+  const [weekStart, setWeekStart] = useState<string>(isoWeekStart());
+  const [freeUsed, setFreeUsed] = useState<number>(0);
+  const [userName, setUserNameState] = useState<string>('');
+  const [weeklyFocus, setWeeklyFocusState] = useState<string>('');
   const [ready, setReady] = useState<boolean>(false);
 
   // hydrate from disk
   useEffect(() => {
     (async () => {
       try {
-        const [storedLang, storedOnb] = await Promise.all([
+        const [storedLang, storedOnb, storedPrem, storedUsage, storedName, storedFocus] = await Promise.all([
           AsyncStorage.getItem(KEY_LANG),
           AsyncStorage.getItem(KEY_ONBOARDING),
+          AsyncStorage.getItem(KEY_PREMIUM),
+          AsyncStorage.getItem(KEY_FREE_USAGE),
+          AsyncStorage.getItem(KEY_USER_NAME),
+          AsyncStorage.getItem(KEY_FOCUS),
         ]);
         if (storedLang === 'de' || storedLang === 'en') setLangState(storedLang);
         setOnboardingSeen(storedOnb === '1');
+        setPremiumState(storedPrem === '1');
+        if (storedUsage) {
+          try {
+            const o = JSON.parse(storedUsage);
+            const currentWeek = isoWeekStart();
+            if (o?.weekStart === currentWeek && typeof o.used === 'number') {
+              setWeekStart(currentWeek);
+              setFreeUsed(Math.max(0, Math.floor(o.used)));
+            } else {
+              // new week → reset
+              setWeekStart(currentWeek);
+              setFreeUsed(0);
+              await AsyncStorage.setItem(KEY_FREE_USAGE,
+                JSON.stringify({ weekStart: currentWeek, used: 0 }));
+            }
+          } catch { /* ignore */ }
+        }
+        if (storedName)  setUserNameState(storedName);
+        if (storedFocus) setWeeklyFocusState(storedFocus);
       } catch { /* ignore */ }
       setReady(true);
     })();
@@ -324,15 +501,83 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.removeItem(KEY_ONBOARDING).catch(() => {});
   }, []);
 
+  const setPremium = useCallback((next: boolean) => {
+    setPremiumState(next);
+    AsyncStorage.setItem(KEY_PREMIUM, next ? '1' : '0').catch(() => {});
+  }, []);
+
+  const consumeFreeReport = useCallback((): boolean => {
+    const currentWeek = isoWeekStart();
+    if (currentWeek !== weekStart) {
+      setWeekStart(currentWeek);
+      setFreeUsed(1);
+      AsyncStorage.setItem(KEY_FREE_USAGE,
+        JSON.stringify({ weekStart: currentWeek, used: 1 })).catch(() => {});
+      return true;
+    }
+    if (isPremium) {
+      // do not decrement quota for premium users
+      return true;
+    }
+    if (freeUsed >= FREE_REPORTS_PER_WEEK) {
+      return false;
+    }
+    const nextUsed = freeUsed + 1;
+    setFreeUsed(nextUsed);
+    AsyncStorage.setItem(KEY_FREE_USAGE,
+      JSON.stringify({ weekStart: currentWeek, used: nextUsed })).catch(() => {});
+    return true;
+  }, [weekStart, freeUsed, isPremium]);
+
+  const refreshQuota = useCallback(async () => {
+    const currentWeek = isoWeekStart();
+    if (currentWeek !== weekStart) {
+      setWeekStart(currentWeek);
+      setFreeUsed(0);
+      await AsyncStorage.setItem(KEY_FREE_USAGE,
+        JSON.stringify({ weekStart: currentWeek, used: 0 })).catch(() => {});
+    }
+  }, [weekStart]);
+
+  const setUserName = useCallback((n: string) => {
+    const v = (n || '').slice(0, 40);
+    setUserNameState(v);
+    AsyncStorage.setItem(KEY_USER_NAME, v).catch(() => {});
+  }, []);
+  const setWeeklyFocus = useCallback((s: string) => {
+    const v = (s || '').slice(0, 200);
+    setWeeklyFocusState(v);
+    AsyncStorage.setItem(KEY_FOCUS, v).catch(() => {});
+  }, []);
+
+  const freeRemaining = Math.max(0, FREE_REPORTS_PER_WEEK - freeUsed);
+
   const value = useMemo<Ctx>(() => ({
     lang,
     setLang,
     onboardingSeen,
     markOnboardingSeen,
     resetOnboarding,
+    isPremium,
+    setPremium,
+    weekStart,
+    freeUsed,
+    freeRemaining,
+    consumeFreeReport,
+    refreshQuota,
+    userName,
+    setUserName,
+    weeklyFocus,
+    setWeeklyFocus,
     ready,
     t: (k: TKey) => translate(lang, k),
-  }), [lang, onboardingSeen, ready, setLang, markOnboardingSeen, resetOnboarding]);
+  }), [
+    lang, onboardingSeen, isPremium, weekStart, freeUsed, freeRemaining,
+    userName, weeklyFocus, ready,
+    setLang, markOnboardingSeen, resetOnboarding,
+    setPremium, consumeFreeReport, refreshQuota,
+    setUserName, setWeeklyFocus,
+  ]);
 
   return <SettingsCtx.Provider value={value}>{children}</SettingsCtx.Provider>;
 }
@@ -340,13 +585,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 export function useSettings(): Ctx {
   const ctx = useContext(SettingsCtx);
   if (!ctx) {
-    // Defensive default so screens still render even if the provider is missing.
     return {
       lang: 'de',
       setLang: () => {},
       onboardingSeen: true,
       markOnboardingSeen: () => {},
       resetOnboarding: () => {},
+      isPremium: false,
+      setPremium: () => {},
+      weekStart: isoWeekStart(),
+      freeUsed: 0,
+      freeRemaining: FREE_REPORTS_PER_WEEK,
+      consumeFreeReport: () => true,
+      refreshQuota: async () => {},
+      userName: '',
+      setUserName: () => {},
+      weeklyFocus: '',
+      setWeeklyFocus: () => {},
       ready: true,
       t: (k: TKey) => translate('de', k),
     };

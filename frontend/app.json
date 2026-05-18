@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "THE SPHERE",
-    "slug": "the-sphere-resonance-engine",
-    "scheme": "thesphere",
+    "name": "Coherence Journal",
+    "slug": "coherence-journal",
+    "scheme": "coherencejournal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,14 +15,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.thesphere.resonance",
+      "bundleIdentifier": "io.aethonflow.coherencejournal",
+      "buildNumber": "1",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Listen to resonance tones",
         "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
-      "package": "com.thesphere.resonance",
+      "package": "io.aethonflow.coherencejournal",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#06080A"

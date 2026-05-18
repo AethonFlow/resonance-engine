@@ -40,7 +40,7 @@ const stateColor = (s: string): string => {
 export default function HistoryScreen() {
   const router = useRouter();
   const t = useT();
-  const { lang } = useSettings();
+  const { lang, isPremium } = useSettings();
   const [items, setItems] = useState<TenzorHistoryDTO[] | null>(null);
   const [stats, setStats] = useState<TenzorStatsDTO | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -146,12 +146,28 @@ export default function HistoryScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             testID="range-30"
-            onPress={() => setRange(30)}
-            style={[styles.rangeBtn, range === 30 && styles.rangeBtnActive]}
+            onPress={() => {
+              if (!isPremium) {
+                Alert.alert(
+                  t('paywall.locked'),
+                  t('paywall.feat.history'),
+                  [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('set.premium.upgrade'), onPress: () => router.push('/paywall') },
+                  ],
+                );
+                return;
+              }
+              setRange(30);
+            }}
+            style={[styles.rangeBtn, range === 30 && styles.rangeBtnActive, !isPremium && styles.rangeBtnLocked]}
           >
             <Text style={[styles.rangeText, range === 30 && styles.rangeTextActive]}>
               {t('journal.range.30')}
             </Text>
+            {!isPremium ? (
+              <Ionicons name="lock-closed" size={9} color={COLORS.textMuted} style={{ marginLeft: 4 }} />
+            ) : null}
           </TouchableOpacity>
           {stats ? (
             <View style={styles.streakInline}>
@@ -244,7 +260,20 @@ export default function HistoryScreen() {
                         </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        onPress={() => shareReportPdf(fromHistory(e), lang)}
+                        onPress={() => {
+                          if (!isPremium) {
+                            Alert.alert(
+                              t('paywall.locked'),
+                              t('paywall.feat.export'),
+                              [
+                                { text: t('common.cancel'), style: 'cancel' },
+                                { text: t('set.premium.upgrade'), onPress: () => router.push('/paywall') },
+                              ],
+                            );
+                            return;
+                          }
+                          shareReportPdf(fromHistory(e), lang);
+                        }}
                         style={[styles.shareBtn, { borderColor: COLORS.amber, backgroundColor: 'rgba(245,176,65,0.06)' }]}
                         testID={`share-pdf-${e.id}`}
                       >
@@ -252,6 +281,9 @@ export default function HistoryScreen() {
                         <Text style={[styles.shareText, { color: COLORS.amber }]}>
                           {t('journal.share.pdf')}
                         </Text>
+                        {!isPremium ? (
+                          <Ionicons name="lock-closed" size={9} color={COLORS.amber} style={{ marginLeft: 2 }} />
+                        ) : null}
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => onDeleteOne(e.id)}
@@ -312,6 +344,7 @@ const styles = StyleSheet.create({
     minHeight: 32,
   },
   rangeBtnActive: { borderColor: COLORS.amber, backgroundColor: 'rgba(245,176,65,0.08)' },
+  rangeBtnLocked: { opacity: 0.7 },
   rangeText: { fontFamily: TYPO.monoBold, fontSize: 10, color: COLORS.textSecondary, letterSpacing: 2 },
   rangeTextActive: { color: COLORS.amber },
 

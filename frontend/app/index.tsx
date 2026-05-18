@@ -54,6 +54,7 @@ const { height: SCREEN_H } = Dimensions.get('window');
 export default function SphereScreen() {
   const router = useRouter();
   const { lang } = useSettings();
+  const { isPremium, freeRemaining } = useSettings();
   const t = useT();
 
   const stateRef = useRef<SphereState>(createInitialState());
@@ -444,10 +445,31 @@ export default function SphereScreen() {
           ) : null}
         </View>
 
-        {/* INSIGHT FEED — last 7 insights as scroll cards */}
+        {/* INSIGHT FEED — last 7 insights as scroll cards (3 if free) */}
         <View style={styles.feedRow} pointerEvents="box-none">
-          <InsightFeed refreshKey={alignmentTick} limit={7} />
+          <InsightFeed refreshKey={alignmentTick} limit={isPremium ? 7 : 3} />
         </View>
+
+        {/* Free-quota inline hint (only for non-premium) */}
+        {!isPremium ? (
+          <View style={styles.quotaRow} pointerEvents="box-none">
+            <Text style={styles.quotaText} testID="quota-inline">
+              {freeRemaining > 0
+                ? t('home.quota.left').replace('{{n}}', String(freeRemaining))
+                : t('home.quota.none')}
+            </Text>
+            {freeRemaining <= 0 ? (
+              <TouchableOpacity
+                onPress={() => router.push('/paywall')}
+                style={styles.quotaBtn}
+                testID="quota-upgrade"
+              >
+                <Ionicons name="diamond-outline" size={12} color={COLORS.amber} />
+                <Text style={styles.quotaBtnText}>{t('set.premium.upgrade')}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* SING INDEX vertical bar (right edge) */}
         <View pointerEvents="box-none" style={styles.singBox}>
@@ -893,6 +915,21 @@ const styles = StyleSheet.create({
   },
   feedRow: {
     paddingTop: 2, paddingBottom: 6,
+  },
+  quotaRow: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'center',
+    paddingHorizontal: 16, paddingVertical: 4, gap: 8,
+  },
+  quotaText: {
+    fontFamily: TYPO.mono, fontSize: 10, color: COLORS.textMuted, letterSpacing: 0.5,
+  },
+  quotaBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
+    borderWidth: 1, borderColor: COLORS.amber, backgroundColor: 'rgba(245,176,65,0.08)',
+  },
+  quotaBtnText: {
+    fontFamily: TYPO.monoBold, fontSize: 9, color: COLORS.amber, letterSpacing: 1,
   },
   hudBlockLeft:  { alignItems: 'flex-start', minWidth: 90 },
   hudBlockRight: { alignItems: 'flex-end',  minWidth: 90 },

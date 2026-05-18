@@ -45,7 +45,7 @@ const stateColor = (s: FieldState): string => {
 
 export default function TenzorScreen() {
   const router = useRouter();
-  const { lang } = useSettings();
+  const { lang, isPremium, freeRemaining, consumeFreeReport } = useSettings();
   const t = useT();
   const [input, setInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -57,6 +57,23 @@ export default function TenzorScreen() {
   const onInvoke = useCallback(async () => {
     const text = input.trim();
     if (text.length < 1) return;
+    // freemium gate: free users get 7 reports / week
+    if (!isPremium && freeRemaining <= 0) {
+      Alert.alert(
+        t('home.quota.none'),
+        t('paywall.locked'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('set.premium.upgrade'), onPress: () => router.push('/paywall') },
+        ],
+      );
+      return;
+    }
+    const allowed = consumeFreeReport();
+    if (!allowed) {
+      Alert.alert(t('home.quota.none'), t('paywall.locked'));
+      return;
+    }
     setLoading(true);
     setErrMsg('');
     setResult(null);
@@ -69,7 +86,7 @@ export default function TenzorScreen() {
     } finally {
       setLoading(false);
     }
-  }, [input, lang]);
+  }, [input, lang, isPremium, freeRemaining, consumeFreeReport, router, t]);
 
   const onCopy = useCallback(async () => {
     if (!result) return;
@@ -90,6 +107,17 @@ export default function TenzorScreen() {
 
   const onSharePdf = useCallback(async () => {
     if (!result) return;
+    if (!isPremium) {
+      Alert.alert(
+        t('paywall.locked'),
+        t('paywall.feat.export'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('set.premium.upgrade'), onPress: () => router.push('/paywall') },
+        ],
+      );
+      return;
+    }
     const er: ExportableReport = {
       input:      input.trim(),
       state:      result.state,
@@ -103,7 +131,7 @@ export default function TenzorScreen() {
       created_at: new Date().toISOString(),
     };
     await shareReportPdf(er, lang);
-  }, [result, input, lang]);
+  }, [result, input, lang, isPremium, t, router]);
 
   const onClear = useCallback(() => {
     setResult(null);

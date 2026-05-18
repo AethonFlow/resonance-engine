@@ -1,38 +1,39 @@
 user_problem_statement: |
-  v5 release — "Resonance Journal" enrichment:
-    1) App-Icon · Splash · Store-Assets in Sphere style (Google Play ready).
-    2) Streak-Counter ("X days in a row aligned").
-    3) 30-day view toggle in the History tab (Sparkline + streak).
-    4) Insight-Journal — horizontal carousel of last 7 insights on Home.
-    5) PDF / Text export of single resonance reports (Share API + expo-print).
+  v6 — "Coherence Journal" Release (Play-Store-ready + monetisable).
+  Seven phases, executed sequentially:
+    1) Monetisation base (isPremium flag + paywall UI)
+    2) Freemium limits (7 reports / week, weekly reset)
+    3) Onboarding 3-step + optional name + weekly focus
+    4) Home ritual flow (CTA + done-today indicator, quota inline)
+    5) Branding / UI-Polish (final app name, microcopy rename)
+    6) Legal (privacy + imprint + medical disclaimer)
+    7) Release pipeline (versionName 1.0.0 / versionCode 1, store-listing)
 
-  Plus: brainstorm marketing positionings for the Google Play Store.
+  Pricing displayed: €4.99/month, €19.99/year (save 67 %).
+  Final app name: Coherence Journal.
+  Bundle id: io.aethonflow.coherencejournal.
 
 backend:
-  - task: "v5 — streak_current/streak_best on /api/tenzor/stats + new /api/tenzor/journal"
+  - task: "v6 backend untouched — orchestrator + history + stats stable"
     implemented: true
     working: true
-    file: "/app/backend/server.py"
+    file: "/app/backend/*"
     stuck_count: 0
-    priority: "high"
+    priority: "low"
     needs_retesting: false
     status_history:
       - working: true
-        agent: "testing"
+        agent: "main"
         comment: |
-          442/442 backend assertions PASS.
-            • S/T   stats now exposes streak_current, streak_best (non-neg ints,
-                    current ≤ best ≤ days). Sequential proof: clear → 0/0,
-                    one happy POST → 1/1, layer-0 fail does NOT bump streak.
-            • U/V   /api/tenzor/journal newest-first, max-30 clamped, 8 keys per entry.
-            • W     limit=0 → 1, limit=200 → 30. Full v1+v2+v3+v4 regression green.
-          Stats avg 146 ms over 3 samples through the public ingress.
+          No backend changes in v6. Freemium gating is enforced client-side
+          (UX-only, not security-critical). 442/442 prior backend assertions
+          still apply.
 
 frontend:
-  - task: "Sphere-style app icons + splash + Play-Store feature graphic"
+  - task: "v6 · Premium + Freemium quota (SettingsProvider extension)"
     implemented: true
     working: true
-    file: "/app/frontend/assets/{icon,adaptive-icon,splash-icon,favicon,feature-graphic}.png"
+    file: "/app/frontend/src/i18n.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -40,21 +41,17 @@ frontend:
       - working: true
         agent: "main"
         comment: |
-          Generated programmatically (PIL):
-            * icon.png             1024 x 1024  · launcher
-            * adaptive-icon.png    1024 x 1024  · Android FG (transparent)
-            * splash-icon.png      1242 x 2436  · iOS splash + wordmark
-            * favicon.png           196 x  196
-            * feature-graphic.png  1024 x  500  · Play Store
-          All on deep-void background (#06080A), with three concentric
-          orbit rings, 8 amber house dots, lime trine triangle and an
-          amber core (Nullstelle). Verified visually via analyze_file_tool.
-          app.json updated: splash + adaptive-icon backgroundColor → #06080A.
+          SettingsProvider now persists:
+            • isPremium (AsyncStorage @sphere/premium/v1)
+            • freeUsed + weekStart  (resets on ISO Monday-based week change)
+            • userName + weeklyFocus
+          New API:  consumeFreeReport() → false if free user reached 7/week,
+                    refreshQuota(), freeRemaining.
 
-  - task: "StreakBadge on Home + inline streak in History"
+  - task: "v6 · Paywall screen + premium gate on TENZOR + History"
     implemented: true
     working: true
-    file: "/app/frontend/src/StreakBadge.tsx , /app/frontend/app/index.tsx , /app/frontend/app/history.tsx"
+    file: "/app/frontend/app/paywall.tsx , /app/frontend/app/tenzor.tsx , /app/frontend/app/history.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -62,17 +59,18 @@ frontend:
       - working: true
         agent: "main"
         comment: |
-          Flame icon + current/best counter. Colour ramp:
-              ≥7 amber · ≥3 amber-soft · ≥1 lime · 0 muted.
-          Tap opens /history.
-          Lives next to the DailyAlignment pill (single row).
-          History page also shows inline streak block beside the
-          7-day / 30-day range toggle.
+          New /paywall route. Stoic dark layout: 4 feature bullets,
+          monthly + yearly plan cards (yearly highlighted with "save 67%"),
+          golden CTA. In dev → "simulate premium" alert toggles the flag.
+          TENZOR invoke blocked when free quota = 0; offers paywall route.
+          PDF share blocked for free users (lock icon on PDF button).
+          30-day toggle on /history blocked for free users (lock icon).
+          Verified visually via single playwright snapshot (no test agent run).
 
-  - task: "7 / 30-day toggle on /history sparkline"
+  - task: "v6 · Onboarding rewrite (3 slides + name + weekly focus)"
     implemented: true
     working: true
-    file: "/app/frontend/app/history.tsx"
+    file: "/app/frontend/src/Onboarding.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -80,14 +78,18 @@ frontend:
       - working: true
         agent: "main"
         comment: |
-          Two-pill toggle (7 TAGE / 30 TAGE). Re-fetches stats on change.
-          Sparkline component already accepts arbitrary series length —
-          gracefully renders 30 points with compressed x-labels.
+          New copy:
+            1. "60 seconds of clarity a day"  (clock icon, amber)
+            2. "Streak keeps you steady"       (fire icon, lime)
+            3. "Share your trajectory"         (export icon, amber-soft)
+            4. optional name input
+            5. optional weekly focus input
+          Verified visually (slide 1 captured).
 
-  - task: "InsightFeed carousel on Home"
+  - task: "v6 · Home ritual flow — quota inline + free-tier feed limit"
     implemented: true
     working: true
-    file: "/app/frontend/src/InsightFeed.tsx , /app/frontend/app/index.tsx"
+    file: "/app/frontend/app/index.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -95,15 +97,15 @@ frontend:
       - working: true
         agent: "main"
         comment: |
-          Horizontal ScrollView with snap-to-card decoration.
-          Each card shows state pill, score, 3-line insight, date.
-          Tap → /history, with auto-refresh whenever a TUNE/INVOKE
-          completes on Home (refreshKey from host state).
+          Free users see inline quota hint ("X freie Einträge diese Woche")
+          + upgrade CTA when quota = 0. Existing DailyAlignment pill already
+          encodes "Heute schon eingetragen?". InsightFeed limited to 3 cards
+          for free, 7 for premium.
 
-  - task: "Export reports — Text + PDF (expo-print + expo-sharing)"
+  - task: "v6 · Branding · final app name + microcopy"
     implemented: true
     working: true
-    file: "/app/frontend/src/export.ts , /app/frontend/app/tenzor.tsx , /app/frontend/app/history.tsx"
+    file: "/app/frontend/app.json , /app/frontend/src/i18n.tsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -111,18 +113,57 @@ frontend:
       - working: true
         agent: "main"
         comment: |
-          shareReportText() — universal Share API (works on iOS, Android, Web).
-          shareReportPdf()  — expo-print → printToFileAsync(html) →
-                              expo-sharing → shareAsync(uri, application/pdf).
-          On web → graceful fallback to text share.
-          Stoic HTML template (dark void, accented score, vector grid,
-          insight + action blockquotes). Available on /tenzor (after INVOKE)
-          and on every /history row when expanded.
+          App name → "Coherence Journal".
+          Bundle id  → io.aethonflow.coherencejournal.
+          Scheme    → coherencejournal.
+          "STIMME DAS FELD" / "TUNE THE FIELD" → "EINTRAG ERSTELLEN" / "NEW ENTRY".
+          "PROJECT MIRROR" / "PROJECT MIRROR" → "SPIEGEL" / "MIRROR".
+          History already labelled "Verlauf" / "History" since v3.
+
+  - task: "v6 · Legal screens — Privacy + Imprint"
+    implemented: true
+    working: true
+    file: "/app/frontend/app/privacy.tsx , /app/frontend/app/imprint.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          /privacy and /imprint reachable via the new SettingsSheet LEGAL
+          section. Privacy text bilingual (DE / EN), explicitly states:
+            • only local + per-call HTTPS transmission
+            • no sale of data, no tracking, no ad cookies, no profiling
+            • Claude Haiku 4.5 disclosure
+            • medical disclaimer
+          Imprint exposes AethonFlow + contact email + privacy link.
+
+  - task: "v6 · Release pipeline — versioning + store-listing assets"
+    implemented: true
+    working: true
+    file: "/app/frontend/app.json , /app/STORE_LISTING.md"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          app.json:  version "1.0.0", android.versionCode 1, ios.buildNumber "1".
+          STORE_LISTING.md: app name, short + long descriptions (DE + EN),
+                            categories, content rating, pricing, asset list,
+                            versioning scheme. Ready to copy-paste into the
+                            Play Console.
+          To build a signed AAB:
+              cd /app/frontend
+              eas build -p android --profile production
+              # requires `eas.json` + a configured EAS account at build time.
 
 metadata:
   created_by: "main_agent"
-  version: "5.0"
-  test_sequence: 4
+  version: "6.0"
+  test_sequence: 5
   run_ui: false
 
 test_plan:
@@ -132,6 +173,10 @@ test_plan:
   test_priority: "high_first"
 
 agent_communication:
-  - agent: "testing"
+  - agent: "main"
     message: |
-      v5 regression: 442/442 PASS. No fixes required.
+      v6 release complete. No backend tests were rerun (no backend changes).
+      No frontend testing-agent run (saved credits per user request).
+      Visual sanity check via single playwright snapshot:
+        • onboarding slide 1 renders with new copy + 5-dot indicator
+        • /paywall renders with 4 features, 2 plans, CTA, legal note
