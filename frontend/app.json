@@ -20,7 +20,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.aethonflow.coherencejournal"
+      "package": "com.aethonflow.coherencejournal",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,6 +29,14 @@
     "plugins": [
       "expo-router"
     ],
-    "scheme": "coherence-journal"
+    "scheme": "coherence-journal",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "8e74b093-bb78-4546-b0be-3cbe49f3d7af"
+      }
+    }
   }
 }
