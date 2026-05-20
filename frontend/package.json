@@ -10,11 +10,14 @@
     "ts:check": "tsc"
   },
   "dependencies": {
+    "@expo-google-fonts/jetbrains-mono": "^0.2.3",
+    "@expo-google-fonts/space-grotesk": "^0.2.3",
     "expo": "~54.0.0",
     "expo-asset": "~12.0.13",
     "expo-constants": "~18.0.13",
     "expo-file-system": "~19.0.22",
     "expo-linking": "~8.0.0",
+    "expo-modules-core": "~2.1.11",
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.9",
     "expo-three": "^7.0.1",
@@ -24,7 +27,7 @@
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
-    "react-native-worklets": "0.5.1",
+    "react-native-worklets": "^0.8.3",
     "three": "^0.156.0"
   },
   "devDependencies": {
