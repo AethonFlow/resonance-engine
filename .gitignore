@@ -27,6 +27,8 @@ env/
 !.env.example
 *.pem
 *.key
+credentials.json
+.credentials
 
 # ── Expo / React Native ─────────────────────────────────────
 .expo/
@@ -91,84 +93,3 @@ pytest-results.xml
 /app/memory/test_credentials.md
 /tmp/
 backend_test.py
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
--e 
-# Environment and credential files
-.env
-.env.*
-*.env
-credentials.json
-*.pem
-*.key
-.credentials
