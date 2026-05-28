@@ -39,8 +39,11 @@ from typing import Optional, Tuple
 # Re-use the existing Coherence Engine primitives.
 try:
     from agent_bus import get_bus as _get_bus
+    from agent_core import get_registry as _get_registry
+    _get_registry()  # wire all 8 agents to the bus at import time
 except ImportError:
-    _get_bus = None  # graceful degradation if cycle_engine unavailable
+    _get_bus = None
+    _get_registry = None  # graceful degradation if cycle_engine unavailable
 
 from aspects import (
     ASPECT_OPERATORS,
