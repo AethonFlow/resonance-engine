@@ -8,7 +8,7 @@ out. Hard 8000 ms timeout enforced at the orchestrator boundary.
 Pipeline (declarative, executed once):
   ingest        -> accept { "input": "..." }
   layer0        -> input validity gate
-  probe         -> Claude Haiku 4.5, 8 operators, JSON only
+  probe         -> Gemini Flash, 8 operators, JSON only
   aspect_matrix -> deterministic Python (clamps applied)
   sing_index    -> (R0*R1*R2)^(1/3) * T_inter * C_E
   vector_4d     -> [cos t, sin t, -sin t, cos t]  from arg(Z1) post-modulation
@@ -30,12 +30,18 @@ import asyncio
 import json
 import math
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
 
 # Re-use the existing Coherence Engine primitives.
+try:
+    from agent_bus import get_bus as _get_bus
+except ImportError:
+    _get_bus = None  # graceful degradation if cycle_engine unavailable
+
 from aspects import (
     ASPECT_OPERATORS,
     _compute_sing_index,
@@ -194,7 +200,6 @@ def _insight(state: str, factor: str, lang: str = "de") -> str:
                 f"The field is scattered — no coherent axis has formed; "
                 f"{f} remains isolated."
             )
-        # INSUFFICIENT_DATA
         return (
             "Input too thin for a resonance reading — the Layer-0 filter "
             "did not let it through."
@@ -226,7 +231,6 @@ def _insight(state: str, factor: str, lang: str = "de") -> str:
             f"Das Feld ist verstreut — keine kohärente Achse hat sich gebildet; "
             f"{f} bleibt isoliert."
         )
-    # INSUFFICIENT_DATA
     return (
         "Eingabe zu dünn für eine Resonanzmessung — der Layer-0-Filter "
         "hat sie nicht durchgelassen."
@@ -246,7 +250,6 @@ def _action(state: str, factor: str, lang: str = "de") -> str:
             return f"Concentrate the intention around {f} before tuning again."
         if state == "COLD":
             return "Start with a single, embodied statement — what is moving in you right now?"
-        # INSUFFICIENT_DATA
         return "Write a complete sentence with a clear intention (≥ 8 chars, ≥ 2 words)."
 
     # default: German
@@ -260,7 +263,6 @@ def _action(state: str, factor: str, lang: str = "de") -> str:
         return f"Konzentriere die Intention um {f}, bevor du erneut stimmst."
     if state == "COLD":
         return "Beginne mit einer einzelnen, körpernahen Aussage — was bewegt sich jetzt?"
-    # INSUFFICIENT_DATA
     return "Schreibe einen vollständigen Satz mit klarer Intention (≥ 8 Zeichen, ≥ 2 Wörter)."
 
 
@@ -329,63 +331,75 @@ def _insufficient_report(lang: str = "de") -> str:
 # ════════════════════════════════════════════════════════════════
 async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Optional[dict]:
     """
-    Single Claude Haiku 4.5 call wrapped in asyncio.wait_for(deadline_s).
+    Single Gemini Flash call wrapped in asyncio.wait_for(deadline_s).
     Returns probe-payload dict or None on any failure / timeout.
+    emergent_key parameter kept for signature compatibility but unused.
     """
-    if not emergent_key:
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
         return None
 
     prompt_parts = [
-        "You are a QUALITATIVE MEASUREMENT OPERATOR \u2014 not an answer generator.",
-        "You measure 8 dimensions of an input, each on a 0.000\u20131.000 scale.",
+        "You are a QUALITATIVE MEASUREMENT OPERATOR — not an answer generator.",
+        "You measure 8 dimensions of an input, each on a 0.000–1.000 scale.",
         "Return EXACTLY ONE JSON object with these keys, in this order:",
         "",
     ]
     for op in ASPECT_OPERATORS:
-        prompt_parts.append(f'  "{op["name"]}": {{"score": float, "marker": str, "vector": int}},')
-    prompt_parts.append("")
-    prompt_parts.append("score: 0.000\u20131.000 (three decimals).")
-    prompt_parts.append('marker: one phrase from the input, max 12 words. "" if input too thin.')
-    prompt_parts.append("vector: -1, 0, or +1 (sign of deviation from neutral 0.5).")
-    prompt_parts.append("Return only the JSON object. No prose. No markdown. No code fences.")
+        prompt_parts.append(
+            f'  "{op["name"]}": {{"score": float, "marker": str, "vector": int}},'
+        )
+    prompt_parts += [
+        "",
+        "score: 0.000–1.000 (three decimals).",
+        'marker: one phrase from the input, max 12 words. "" if input too thin.',
+        "vector: -1, 0, or +1 (sign of deviation from neutral 0.5).",
+        "Return only the JSON object. No prose. No markdown. No code fences.",
+    ]
     system_prompt = "\n".join(prompt_parts)
 
+    user_text = (
+        f'Input:\n"""\n{text}\n"""\n\n'
+        "Return the JSON object measuring all 8 dimensions."
+    )
+
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage  # local import
-        import uuid as _uuid
+        import google.generativeai as genai
 
-        chat = LlmChat(
-            api_key=emergent_key,
-            session_id=f"tenzor-{_uuid.uuid4()}",
-            system_message=system_prompt,
-        ).with_model("anthropic", "claude-haiku-4-5-20251001")
-
-        user_text = (
-            f'Input:\n"""\n{text}\n"""\n\n'
-            "Return the JSON object measuring all 8 dimensions."
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(
+            model_name="gemini-2.0-flash",
+            system_instruction=system_prompt,
         )
 
-        raw = await asyncio.wait_for(
-            chat.send_message(UserMessage(text=user_text)),
-            timeout=deadline_s,
-        )
+        async def _call() -> str:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None, lambda: model.generate_content(user_text)
+            )
+            return response.text
+
+        raw = await asyncio.wait_for(_call(), timeout=deadline_s)
         if not isinstance(raw, str):
             raw = str(raw)
-        # Robust JSON extraction
-        import re
+
+        # Robust JSON extraction — strip markdown fences if present
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         if not m:
             return None
         data = json.loads(m.group(0))
         if not isinstance(data, dict):
             return None
+
         scores: list[float] = []
         vectors: list[int] = []
         markers: list[str] = []
         for op in ASPECT_OPERATORS:
             slot = data.get(op["name"])
             if not isinstance(slot, dict):
-                scores.append(0.5); vectors.append(0); markers.append("")
+                scores.append(0.5)
+                vectors.append(0)
+                markers.append("")
                 continue
             try:
                 s_val = float(slot.get("score", 0.5))
@@ -398,7 +412,9 @@ async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Opti
                 v_val = 0
             vectors.append(v_val if v_val in (-1, 0, 1) else 0)
             markers.append(str(slot.get("marker", ""))[:80])
+
         return {"scores": scores, "vectors": vectors, "markers": markers}
+
     except Exception:
         return None
 
@@ -437,11 +453,11 @@ async def tenzor_invoke(
         if not ok:
             return _insufficient_payload()
 
-        # ── Stage 2: probe (Claude Haiku 4.5) ─────────────────────
+        # ── Stage 2: probe (Gemini Flash) ──────────────────────────
         budget_left = (TENZOR_TIMEOUT_MS / 1000.0) - (time.monotonic() - started) - 0.5
         probe_deadline = max(0.5, min(PROBE_BUDGET_MS / 1000.0, budget_left))
-        key = emergent_key if emergent_key is not None else os.environ.get("EMERGENT_LLM_KEY", "")
-        probe = await _run_probe(s_in, emergent_key=key, deadline_s=probe_deadline)
+        # emergent_key kept for backwards-compat; Gemini key comes from env
+        probe = await _run_probe(s_in, emergent_key="", deadline_s=probe_deadline)
         if probe is None:
             return _insufficient_payload()
 
@@ -458,6 +474,18 @@ async def tenzor_invoke(
         theta = _arg_z1(q1)
         v = _vector_4d(theta)
         energy = _energy_level(v)
+
+        # ── Stage 5b: Agent Bus routing (non-blocking) ────────────
+        bus_events: list[dict] = []
+        if _get_bus is not None:
+            try:
+                msgs = _get_bus().on_state_update(
+                    theta=theta, vector_4d=v, sing=sing,
+                    scores=probe["scores"],
+                )
+                bus_events = [m.to_dict() for m in msgs]
+            except Exception:
+                pass  # bus must never break the pipeline
 
         # ── Stage 6: deterministic resonant-field passthrough ─────
         state, agent_feedback = _state_tag(sing)
@@ -487,6 +515,9 @@ async def tenzor_invoke(
             "insight":         insight,
             "action":          action,
             "lang":            lang,
+            "llm_scores":      probe["scores"],   # 8 operator scores — persisted for drift analysis
+            "llm_vectors":     probe["vectors"],
+            "bus_events":      bus_events,        # AgentBus messages fired this pass
         }
 
     try:
