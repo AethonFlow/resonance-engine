@@ -30,7 +30,9 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: COLORS.void },
               animation: 'fade',
             }}
-          />
+          >
+            <Stack.Screen name="orbit" options={{ title: 'TheOrbit' }} />
+          </Stack>
           <OnboardingOverlay />
         </SettingsProvider>
       </SafeAreaProvider>

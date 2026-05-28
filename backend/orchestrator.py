@@ -38,12 +38,13 @@ from typing import Optional, Tuple
 
 # Re-use the existing Coherence Engine primitives.
 try:
-    from agent_bus import get_bus as _get_bus
+    from agent_bus import get_bus as _get_bus, MessageType as _MessageType
     from agent_core import get_registry as _get_registry
     _get_registry()  # wire all 8 agents to the bus at import time
 except ImportError:
     _get_bus = None
-    _get_registry = None  # graceful degradation if cycle_engine unavailable
+    _get_registry = None
+    _MessageType = None  # graceful degradation if cycle_engine unavailable
 
 from aspects import (
     ASPECT_OPERATORS,
@@ -466,6 +467,39 @@ async def tenzor_invoke(
 
         # ── Stage 3: aspect-matrix on canonical baseline ──────────
         aspects = probe_to_aspects(probe)
+
+        # ── Stage 3b: agent feedback loop (cross-pass correction) ─
+        # RESPONSE messages from the previous tenzor pass carry
+        # aspect_score_deltas from agents. Apply them as small
+        # amplitude corrections before physics computation.
+        # This closes the loop: agent perception → delta → state.
+        if _get_bus is not None and _MessageType is not None:
+            try:
+                delta_map: dict = {}
+                for msg in _get_bus().get_log(12):
+                    if msg.type == _MessageType.RESPONSE:
+                        for asp_name, d in msg.content.get(
+                            "aspect_score_deltas", {}
+                        ).items():
+                            delta_map[asp_name] = (
+                                delta_map.get(asp_name, 0.0) + d
+                            )
+                if delta_map:
+                    from aspects import _AMPL_GAIN as _AG
+                    for asp in aspects:
+                        raw_d = delta_map.get(asp.name, 0.0)
+                        if abs(raw_d) > 0.005:
+                            # clamp per-aspect delta to ±0.15 score units
+                            d = max(-0.15, min(0.15, raw_d))
+                            # convert score delta → amplitude space
+                            amp_delta = d * 2.0 * _AG
+                            asp.effects.amplitude = max(
+                                -_AG,
+                                min(_AG, asp.effects.amplitude + amp_delta),
+                            )
+            except Exception:
+                pass  # never break the pipeline
+
         q0, p0, A0 = _canonical_baseline()
         q1, _p1, A1 = apply_aspect_matrix_py(q0, p0, A0, aspects)
 

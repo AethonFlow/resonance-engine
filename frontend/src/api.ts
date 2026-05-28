@@ -143,6 +143,83 @@ export type TenzorJournalEntryDTO = {
   lang:       'de' | 'en';
 };
 
+// ── TheOrbit V6 DTOs ──────────────────────────────────────────
+export type CycleStateDTO = {
+  theta: number;
+  theta_deg: number;
+  house_index: number;
+  house_code: string;
+  house_title: string;
+  operator: string;
+  archetype: string;
+  opposite_house: { index: number; code: string; title: string; operator: string };
+  warm_kalt: string;
+  warm_score: number;
+  flow: number;
+  force: number;
+  character: string;
+  sin2: number;
+  cos2: number;
+};
+
+export type SpinDialogDTO = {
+  active_operator: string;
+  complement_operator: string;
+  axis: string;
+  message_count: number;
+  last_theta: number;
+  last_warm_kalt: string;
+  cycle_id: string;
+};
+
+export type AgentStatusDTO = {
+  house: number;
+  operator: string;
+  drift: number;
+  cycle_count: number;
+  beliefs: Record<string, unknown>;
+  observations: number;
+};
+
+export type OrbitInvokeResponseDTO = TenzorInvokeResponseDTO & {
+  cycle_state: CycleStateDTO;
+  spin_dialog: SpinDialogDTO | null;
+  agent_statuses: AgentStatusDTO[];
+  bus_cycle_id: string;
+  orbit_version: string;
+};
+
+export type DevCompassAgentViewDTO = {
+  house: number;
+  operator: string;
+  archetype: string;
+  drift: number;
+  relevance: number;
+  beliefs: Record<string, unknown>;
+  perspective: string;
+};
+
+export type DevCompassResponseDTO = {
+  idea: string;
+  lang: string;
+  compass_reading: {
+    house_index: number;
+    house_title: string;
+    operator: string;
+    theta_deg: number;
+    sing: number;
+    warm_kalt: string;
+    character: string;
+  };
+  recommendation: string;
+  urgency: string;
+  spin_dialog: SpinDialogDTO | null;
+  agent_views: DevCompassAgentViewDTO[];
+  insight: string;
+  action: string;
+  elapsed_ms: number;
+};
+
 export const API = {
   async root() { return (await api.get('/')).data; },
   async health() { return (await api.get('/health')).data; },
@@ -206,5 +283,28 @@ export const API = {
   },
   async tenzorJournal(limit = 7): Promise<TenzorJournalEntryDTO[]> {
     return (await api.get('/tenzor/journal', { params: { limit } })).data;
+  },
+
+  // ── TheOrbit V6 ──────────────────────────────────────────────
+  async orbitInvoke(
+    input: string,
+    opts?: { lang?: 'de' | 'en' },
+  ): Promise<OrbitInvokeResponseDTO> {
+    return (
+      await api.post('/orbit/invoke', { input, lang: opts?.lang ?? 'de' }, { timeout: 12_000 })
+    ).data;
+  },
+
+  async orbitAgents(): Promise<{ available: boolean; agents: AgentStatusDTO[]; bus_cycle_id: string; bus_log_size: number }> {
+    return (await api.get('/orbit/agents')).data;
+  },
+
+  async devCompassAnalyze(
+    idea: string,
+    opts?: { lang?: 'de' | 'en' },
+  ): Promise<DevCompassResponseDTO> {
+    return (
+      await api.post('/devcompass/analyze', { idea, lang: opts?.lang ?? 'de' }, { timeout: 12_000 })
+    ).data;
   },
 };

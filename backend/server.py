@@ -56,6 +56,20 @@ from orchestrator import (
     tenzor_invoke,
 )
 
+try:
+    from cycle_engine import (
+        HOUSES as ORBIT_HOUSES,
+        HOUSE_BY_INDEX as ORBIT_HOUSE_BY_INDEX,
+        compute_warm_kalt,
+        theta_to_house_index,
+        describe_zyklus_position,
+    )
+    from agent_bus import get_bus as _orbit_get_bus
+    from agent_core import get_registry as _orbit_get_registry
+    _ORBIT_AVAILABLE = True
+except ImportError:
+    _ORBIT_AVAILABLE = False
+
 load_dotenv()
 
 MONGO_URL = os.environ["MONGO_URL"]
@@ -375,6 +389,7 @@ class TenzorHistoryEntry(BaseModel):
     action:     str
     lang:       str
     created_at: str
+    llm_scores: Optional[List[float]] = None   # 8 operator scores; None for legacy entries
 
 
 # ════════════════════════════════════════════════════════════════
@@ -695,6 +710,7 @@ async def tenzor_invoke_endpoint(payload: TenzorInvokeRequest):
                 "action":     result["action"],
                 "lang":       result.get("lang", lang),
                 "created_at": datetime.now(timezone.utc).isoformat(),
+                "llm_scores": result.get("llm_scores"),   # 8 operator scores for drift analysis
             }
             await db.tenzor_history.insert_one(doc)
             history_id = doc["id"]
@@ -870,18 +886,410 @@ async def tenzor_journal(limit: int = 7):
     return out
 
 
+@api.get("/tenzor/drift")
+async def tenzor_drift(days: int = 14, min_entries: int = 3):
+    """
+    Cognitive Drift Score — temporal coherence analysis over `days` calendar days.
+
+    Returns a composite drift score CDS ∈ [0, 1] (higher = more drift) built from:
+      drift_ratio      — fraction of COLD/DRIFT entries in the window
+      score_volatility — normalised std-dev of sing_index
+      score_decline    — linear regression slope (negative = declining = more drift)
+      factor_entropy   — unpredictability of the dominant operator
+      vector_rotation  — circular variance of the 4D-vector angles
+
+    Also returns per-dimension drift (mean, std, velocity) when llm_scores are present.
+    """
+    import math as _math
+    from collections import Counter
+
+    days = max(1, min(90, int(days or 14)))
+    min_entries = max(2, min(50, int(min_entries or 3)))
+
+    now_utc = datetime.now(timezone.utc)
+    start_utc = (now_utc - timedelta(days=days)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    docs = (
+        await db.tenzor_history
+        .find({"created_at": {"$gte": start_utc.isoformat()}}, {"_id": 0})
+        .sort("created_at", 1)
+        .to_list(1000)
+    )
+
+    n = len(docs)
+    if n < min_entries:
+        return {
+            "status":       "insufficient_data",
+            "n":            n,
+            "min_required": min_entries,
+            "days":         days,
+            "drift_score":  None,
+        }
+
+    scores  = [float(d.get("score") or 0.0) for d in docs]
+    states  = [d.get("state", "COLD") for d in docs]
+    factors = [d.get("factor", "INSUFFICIENT_DATA") for d in docs]
+    vectors = [[float(x) for x in (d.get("vector_4d") or [0.0, 0.0, 0.0, 0.0])] for d in docs]
+
+    # ── Score velocity (linear regression slope, normalised to [-1, +1]) ──
+    x_mean = (n - 1) / 2.0
+    y_mean = sum(scores) / n
+    cov_xy = sum((i - x_mean) * (scores[i] - y_mean) for i in range(n))
+    var_x  = sum((i - x_mean) ** 2 for i in range(n))
+    slope  = cov_xy / var_x if var_x > 0 else 0.0
+    velocity = max(-1.0, min(1.0, slope / 0.05))   # ±0.05/entry = full swing
+
+    # ── Score volatility (std-dev, normalised; 0.3 std = fully volatile) ──
+    variance   = sum((s - y_mean) ** 2 for s in scores) / n
+    volatility = min(1.0, _math.sqrt(variance) / 0.3)
+
+    # ── Drift ratio (fraction of COLD or DRIFT entries) ──
+    n_drift     = sum(1 for s in states if s in ("COLD", "DRIFT"))
+    drift_ratio = n_drift / n
+
+    # ── Factor entropy (how unpredictable is the dominant operator?) ──
+    fc = Counter(f for f in factors if f != "INSUFFICIENT_DATA")
+    total_f = sum(fc.values())
+    entropy = 0.0
+    if total_f > 0:
+        for count in fc.values():
+            p = count / total_f
+            if p > 0:
+                entropy -= p * _math.log2(p)
+    factor_entropy = (entropy / _math.log2(8)) if entropy > 0 else 0.0
+
+    # ── Vector angle variance (circular; 0=stable, 1=scattered) ──
+    angles = [
+        _math.atan2(v[1], v[0]) for v in vectors
+        if any(abs(x) > 1e-9 for x in v)
+    ]
+    if angles:
+        sx = sum(_math.cos(a) for a in angles) / len(angles)
+        sy = sum(_math.sin(a) for a in angles) / len(angles)
+        angle_variance = 1.0 - _math.hypot(sx, sy)
+    else:
+        angle_variance = 0.0
+
+    # ── Composite CDS ────────────────────────────────────────────────
+    cds = (
+        0.35 * drift_ratio
+        + 0.25 * volatility
+        + 0.20 * ((1.0 - velocity) / 2.0)   # declining velocity → more drift
+        + 0.10 * factor_entropy
+        + 0.10 * angle_variance
+    )
+    cds = round(max(0.0, min(1.0, cds)), 3)
+
+    drift_label = (
+        "stable"          if cds < 0.25 else
+        "mild_drift"      if cds < 0.50 else
+        "moderate_drift"  if cds < 0.75 else
+        "high_drift"
+    )
+
+    # ── Per-dimension drift (only when llm_scores are stored) ──────
+    dimension_drift = None
+    llm_score_rows  = [d.get("llm_scores") for d in docs if d.get("llm_scores") and len(d["llm_scores"]) == 8]
+    if len(llm_score_rows) >= min_entries:
+        dimension_drift = []
+        for i, op in enumerate(ASPECT_OPERATORS):
+            dim_scores = [row[i] for row in llm_score_rows]
+            dm = sum(dim_scores) / len(dim_scores)
+            dv = _math.sqrt(sum((s - dm) ** 2 for s in dim_scores) / len(dim_scores))
+            dn = len(dim_scores)
+            dx_mean = (dn - 1) / 2.0
+            dcov    = sum((j - dx_mean) * (dim_scores[j] - dm) for j in range(dn))
+            dvar_x  = sum((j - dx_mean) ** 2 for j in range(dn))
+            dslope  = dcov / dvar_x if dvar_x > 0 else 0.0
+            dimension_drift.append({
+                "operator": op["name"],
+                "house":    op["default_target"],
+                "mean":     round(dm, 3),
+                "std":      round(dv, 3),
+                "velocity": round(max(-1.0, min(1.0, dslope / 0.05)), 3),
+                "trend":    (
+                    "improving" if dslope >  0.005 else
+                    "declining" if dslope < -0.005 else
+                    "stable"
+                ),
+            })
+        # Sort by absolute velocity (most-changing first)
+        dimension_drift.sort(key=lambda d: abs(d["velocity"]), reverse=True)
+
+    return {
+        "status":       "ok",
+        "n":            n,
+        "days":         days,
+        "period":       {"start": start_utc.isoformat(), "end": now_utc.isoformat()},
+        "drift_score":  cds,
+        "drift_label":  drift_label,
+        "components": {
+            "drift_ratio":      round(drift_ratio, 3),
+            "score_volatility": round(volatility, 3),
+            "score_velocity":   round(velocity, 3),
+            "factor_entropy":   round(factor_entropy, 3),
+            "vector_rotation":  round(angle_variance, 3),
+        },
+        "score_trend": {
+            "mean":  round(y_mean, 3),
+            "min":   round(min(scores), 3),
+            "max":   round(max(scores), 3),
+            "slope": round(slope, 4),
+        },
+        "state_distribution": dict(Counter(states)),
+        "top_drift_factor":   fc.most_common(1)[0][0] if fc else None,
+        "factor_counts":      dict(fc.most_common()),
+        "dimension_drift":    dimension_drift,  # None until llm_scores accumulate
+        "series": [
+            {
+                "created_at": d.get("created_at"),
+                "score":      float(d.get("score") or 0.0),
+                "state":      d.get("state"),
+                "factor":     d.get("factor"),
+            }
+            for d in docs
+        ],
+    }
+
+
+@api.delete("/tenzor/history/{entry_id}")
+
 @api.delete("/tenzor/history/{entry_id}")
 async def tenzor_history_delete(entry_id: str):
-    res = await db.tenzor_history.delete_one({"id": entry_id})
-    if res.deleted_count == 0:
-        raise HTTPException(404, "history entry not found")
-    return {"deleted": True, "id": entry_id}
+    """Delete a single TENZOR history entry by id."""
+    result = await db.tenzor_history.delete_one({"id": entry_id})
+    return {"deleted": result.deleted_count > 0, "id": entry_id}
 
 
 @api.delete("/tenzor/history")
 async def tenzor_history_clear():
-    res = await db.tenzor_history.delete_many({})
-    return {"deleted": int(res.deleted_count)}
+    """Delete all TENZOR history entries."""
+    result = await db.tenzor_history.delete_many({})
+    return {"deleted": result.deleted_count}
+
+
+# ════════════════════════════════════════════════════════════════
+# TheOrbit — Cycle Engine endpoints
+# /api/orbit/invoke  →  enriched tenzor + cycle state + agents
+# /api/orbit/agents  →  live agent status snapshot
+# /api/devcompass/analyze  →  8-agent feature/idea analysis
+# ════════════════════════════════════════════════════════════════
+
+class OrbitRequest(BaseModel):
+    input: str = Field(..., min_length=1, max_length=2000)
+    lang:  Optional[str] = Field(default="de")
+    save:  Optional[bool] = Field(default=False)
+
+
+class DevCompassRequest(BaseModel):
+    idea: str = Field(..., min_length=1, max_length=2000)
+    lang: Optional[str] = Field(default="de")
+
+
+def _orbit_cycle_state(vector_4d: list) -> dict:
+    if not _ORBIT_AVAILABLE:
+        return {}
+    import math
+    theta = math.atan2(vector_4d[1], vector_4d[0])
+    wk    = compute_warm_kalt(theta)
+    h_idx = theta_to_house_index(theta)
+    house = ORBIT_HOUSE_BY_INDEX[h_idx]
+    comp  = ORBIT_HOUSE_BY_INDEX[house.opposite]
+    return {
+        "theta":          round(theta, 6),
+        "theta_deg":      round(math.degrees(theta) % 360, 2),
+        "house_index":    h_idx,
+        "house_code":     house.code,
+        "house_title":    house.title,
+        "operator":       house.operator,
+        "archetype":      house.archetype,
+        "opposite_house": {
+            "index":    comp.index,
+            "code":     comp.code,
+            "title":    comp.title,
+            "operator": comp.operator,
+        },
+        "warm_kalt":  wk.label,
+        "warm_score": round(wk.warm_score, 3),
+        "flow":       round(wk.flow, 4),
+        "force":      round(wk.force, 4),
+        "character":  house.character,
+        "sin2":       round(house.sin2, 3),
+        "cos2":       round(house.cos2, 3),
+    }
+
+
+def _orbit_spin_dialog(bus) -> Optional[dict]:
+    if bus is None:
+        return None
+    sd = bus.reconstruct_spin_dialog()
+    if not sd.get("axes"):
+        return None
+    all_msgs = []
+    for msgs in sd["axes"].values():
+        all_msgs.extend(msgs)
+    if not all_msgs:
+        return None
+    latest   = max(all_msgs, key=lambda m: m.get("timestamp", 0))
+    axis_key = f"H{min(latest['from_house'], latest['to_house'])}-H{max(latest['from_house'], latest['to_house'])}"
+    axis_msgs = sd["axes"].get(axis_key, [])
+    return {
+        "active_operator":     latest.get("from_operator"),
+        "complement_operator": latest.get("to_operator"),
+        "axis":                axis_key,
+        "message_count":       len(axis_msgs),
+        "last_theta":          latest.get("theta"),
+        "last_warm_kalt":      latest.get("warm_kalt"),
+        "cycle_id":            sd.get("cycle_id"),
+    }
+
+
+@api.post("/orbit/invoke")
+async def orbit_invoke(payload: OrbitRequest):
+    """
+    Enriched TENZOR pass with full cycle state.
+    Returns everything from /api/tenzor/invoke plus:
+      cycle_state, spin_dialog, agent_statuses, bus_cycle_id.
+    """
+    result = await tenzor_invoke(payload.input, lang=payload.lang or "de")
+
+    cycle_state = _orbit_cycle_state(result.get("vector_4d", [0, 0, 0, 0]))
+    bus         = _orbit_get_bus() if _ORBIT_AVAILABLE else None
+    spin_dialog = _orbit_spin_dialog(bus)
+
+    agent_statuses: list = []
+    if _ORBIT_AVAILABLE:
+        try:
+            agent_statuses = _orbit_get_registry().all_statuses()
+        except Exception:
+            pass
+
+    return {
+        **result,
+        "cycle_state":    cycle_state,
+        "spin_dialog":    spin_dialog,
+        "agent_statuses": agent_statuses,
+        "bus_cycle_id":   bus.current_cycle_id if bus else None,
+        "orbit_version":  "v6",
+    }
+
+
+@api.get("/orbit/agents")
+async def orbit_agents():
+    """Live snapshot of all 8 agent states."""
+    if not _ORBIT_AVAILABLE:
+        return {"available": False, "agents": []}
+    try:
+        return {
+            "available":    True,
+            "agents":       _orbit_get_registry().all_statuses(),
+            "bus_cycle_id": _orbit_get_bus().current_cycle_id,
+            "bus_log_size": len(_orbit_get_bus().get_log(200)),
+        }
+    except Exception as exc:
+        return {"available": False, "error": str(exc), "agents": []}
+
+
+def _devcompass_perspective(operator: str, cycle_state: dict, sing: float, lang: str) -> str:
+    house_title = cycle_state.get("house_title", "")
+    wk          = cycle_state.get("warm_kalt", "NEUTRAL")
+    flow        = cycle_state.get("flow", 0.0)
+    de = {
+        "The Seer":      f"Was ist die irreducible Wahrheit dieser Idee? Feld: {house_title}.",
+        "The Guardian":  f"Welche Evidenz stützt das? Flow={flow:+.2f} — Struktur folgt Momentum.",
+        "The Prophet":   "Was muss jetzt gesagt werden, vollständig und ohne Hedging?",
+        "The Anchor":    "Was muss stabilisiert werden, bevor diese Idee skaliert?",
+        "The Decoder":   "Welches tiefere Muster codiert diese Idee systemisch?",
+        "The Healer":    f"Welche Spannung muss transformiert werden? Thermal={wk}.",
+        "The Oracle":    f"Was sagen die Daten wirklich? Kohärenz={sing:.2f}.",
+        "The Disruptor": "Was muss abgestoßen werden, damit das Nächste beginnen kann?",
+    }
+    en = {
+        "The Seer":      f"What is the irreducible truth of this idea? Field: {house_title}.",
+        "The Guardian":  f"What evidence supports this? Flow={flow:+.2f} — structure follows momentum.",
+        "The Prophet":   "What needs to be said now, fully and without hedging?",
+        "The Anchor":    "What must be stabilised before this idea can scale?",
+        "The Decoder":   "What deeper pattern does this idea encode systemically?",
+        "The Healer":    f"What tension must be transformed? Thermal={wk}.",
+        "The Oracle":    f"What does the data actually say? Coherence={sing:.2f}.",
+        "The Disruptor": "What must be shed so the next cycle can begin?",
+    }
+    return (de if lang == "de" else en).get(operator, "")
+
+
+@api.post("/devcompass/analyze")
+async def devcompass_analyze(payload: DevCompassRequest):
+    """
+    8-agent feature/idea analysis (DevCompass).
+
+    Runs an idea through the resonance engine and returns structured
+    perspectives from all 8 operator agents, urgency signal, and recommendation.
+    """
+    lang   = payload.lang or "de"
+    result = await tenzor_invoke(payload.idea, lang=lang)
+
+    cycle_state = _orbit_cycle_state(result.get("vector_4d", [0, 0, 0, 0]))
+    sing        = result.get("score", 0.0)
+    wk_label    = cycle_state.get("warm_kalt", "NEUTRAL")
+
+    urgency_map = {
+        "HOT":        "HIGH — forward momentum, ship or commit now",
+        "WARM":       "MEDIUM — building, continue with evidence",
+        "NULLSTELLE": "PIVOT — turning point, re-evaluate direction",
+        "COLD":       "LOW — discharging, gather data before acting",
+        "FREEZING":   "HOLD — peak reverse flow, do not commit",
+        "NEUTRAL":    "UNCLEAR — insufficient resonance signal",
+    }
+
+    agent_views: list = []
+    if _ORBIT_AVAILABLE:
+        try:
+            import math as _m
+            registry     = _orbit_get_registry()
+            active_house = cycle_state.get("house_index", 1)
+            for status in registry.all_statuses():
+                h        = ORBIT_HOUSE_BY_INDEX[status["house"]]
+                h_diff   = min(abs(status["house"] - active_house),
+                               8 - abs(status["house"] - active_house))
+                relevance = round(1.0 - h_diff / 4.0, 2)
+                agent_views.append({
+                    "house":       status["house"],
+                    "operator":    status["operator"],
+                    "archetype":   h.archetype[:80] + "…",
+                    "drift":       status["drift"],
+                    "relevance":   relevance,
+                    "beliefs":     status["beliefs"],
+                    "perspective": _devcompass_perspective(
+                        status["operator"], cycle_state, sing, lang
+                    ),
+                })
+        except Exception:
+            pass
+
+    bus         = _orbit_get_bus() if _ORBIT_AVAILABLE else None
+    spin_dialog = _orbit_spin_dialog(bus)
+
+    return {
+        "idea":  payload.idea[:120],
+        "lang":  lang,
+        "compass_reading": {
+            "house_index": cycle_state.get("house_index"),
+            "house_title": cycle_state.get("house_title"),
+            "operator":    cycle_state.get("operator"),
+            "theta_deg":   cycle_state.get("theta_deg"),
+            "sing":        round(sing, 3),
+            "warm_kalt":   wk_label,
+            "character":   cycle_state.get("character"),
+        },
+        "recommendation": cycle_state.get("archetype", ""),
+        "urgency":         urgency_map.get(wk_label, "UNCLEAR"),
+        "spin_dialog":     spin_dialog,
+        "agent_views":     agent_views,
+        "insight":         result.get("insight", ""),
+        "action":          result.get("action", ""),
+        "elapsed_ms":      result.get("elapsed_ms", 0),
+    }
 
 
 app.include_router(api)
