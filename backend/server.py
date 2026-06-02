@@ -1299,3 +1299,10 @@ async def devcompass_analyze(payload: DevCompassRequest):
 
 
 app.include_router(api)
+),
+        "action":          result.get("action", ""),
+        "elapsed_ms":      result.get("elapsed_ms", 0),
+    }
+
+
+app.include_router(api)
