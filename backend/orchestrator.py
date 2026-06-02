@@ -275,6 +275,56 @@ def _insight_de(state: str, factor: str) -> str:
     return _insight(state, factor, "de")
 
 
+# ════════════════════════════════════════════════════════════════
+# Layer-1 Mirror — plain human language, no technical terms
+#   Maps (state, factor) → 2-3 German sentences the user actually feels.
+#   Deterministic, zero LLM calls.
+# ════════════════════════════════════════════════════════════════
+_FACTOR_HUMAN_DE: dict[str, str] = {
+    "ANALYTICAL_COLDNESS":     "Klarheit und Orientierung",
+    "EVIDENTIAL_DENSITY":      "das Bedürfnis nach Belegen und Sicherheit",
+    "RELATIONAL_WARMTH":       "Verbindung und Nähe zu anderen",
+    "GROUNDEDNESS":            "Stabilität und Halt",
+    "STRUCTURAL_COMPLETENESS": "der Wunsch, etwas zu Ende zu bringen",
+    "TRANSFORMATIVE_TENSION":  "eine Spannung, die sich verändern will",
+    "SEMANTIC_DEPTH":          "ein tieferes Muster, das sichtbar wird",
+    "SOCIAL_CALIBRATION":      "die Frage, wie du auf andere wirkst",
+    "INSUFFICIENT_DATA":       "",
+}
+
+_COHERENCE_LINE_DE: dict[str, str] = {
+    "NULLSTELLE": "Dein Zustand ist vollständig klar und in sich ruhend.",
+    "SINGING":    "Dein Zustand ist klar und gebündelt — alles zieht in eine Richtung.",
+    "WARM":       "Dein Zustand hat eine erkennbare Richtung, ist aber noch nicht ganz geschlossen.",
+    "DRIFT":      "Es ist Bewegung da, aber noch keine klare Linie.",
+    "COLD":       "Deine Gedanken streuen gerade in verschiedene Richtungen — viel Bewegung, wenig Mitte.",
+    "INSUFFICIENT_DATA": "Zu wenig, um etwas zu erkennen — schreib ruhig mehr.",
+}
+
+_GROUNDING_LINE_DE: dict[str, str] = {
+    "DRIFT": "Das ist keine Schwäche — es ist eine Phase des Suchens.",
+    "COLD":  "Das ist kein Fehler, sondern ein Zeichen dass gerade viel in dir arbeitet.",
+}
+
+
+def _mirror_layer1(state: str, factor: str) -> str:
+    """
+    Returns 2-3 plain German sentences for the Layer-1 (Spiegel) view.
+    No scores, no field names, no technical language.
+    """
+    coherence_line = _COHERENCE_LINE_DE.get(state, "")
+    factor_theme   = _FACTOR_HUMAN_DE.get(factor, "")
+    grounding      = _GROUNDING_LINE_DE.get(state, "")
+
+    parts = [coherence_line]
+    if factor_theme:
+        parts.append(f"Die meiste Energie liegt gerade bei: {factor_theme}.")
+    if grounding:
+        parts.append(grounding)
+
+    return " ".join(p for p in parts if p)
+
+
 def _action_de(state: str, factor: str) -> str:
     return _action(state, factor, "de")
 
@@ -446,9 +496,10 @@ async def tenzor_invoke(
             "energy": 0.0,
             "vector_4d": [0.0, 0.0, 0.0, 0.0],
             "agent_feedback": "INSUFFICIENT_DATA",
-            "insight": _insight("INSUFFICIENT_DATA", "INSUFFICIENT_DATA", lang),
-            "action":  _action("INSUFFICIENT_DATA", "INSUFFICIENT_DATA", lang),
-            "lang":    lang,
+            "insight":       _insight("INSUFFICIENT_DATA", "INSUFFICIENT_DATA", lang),
+            "action":        _action("INSUFFICIENT_DATA", "INSUFFICIENT_DATA", lang),
+            "mirror_layer1": _mirror_layer1("INSUFFICIENT_DATA", "INSUFFICIENT_DATA"),
+            "lang":          lang,
         }
 
     async def _pipeline() -> dict:
@@ -551,6 +602,7 @@ async def tenzor_invoke(
             "agent_feedback":  agent_feedback,
             "insight":         insight,
             "action":          action,
+            "mirror_layer1":   _mirror_layer1(state, factor),
             "lang":            lang,
             "llm_scores":      probe["scores"],   # 8 operator scores — persisted for drift analysis
             "llm_vectors":     probe["vectors"],
@@ -588,6 +640,82 @@ def load_flows_config() -> dict:
 
 def load_orchestrator_prompt() -> str:
     try:
+        return _PROMPT_PATH.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+_events = [m.to_dict() for m in msgs]
+            except Exception:
+                pass  # bus must never break the pipeline
+
+        # ── Stage 6: deterministic resonant-field passthrough ─────
+        state, agent_feedback = _state_tag(sing)
+        factor = _primary_factor(probe["scores"])
+
+        # ── Stage 7: synthesize strict template (in chosen lang) ──
+        insight = _insight(state, factor, lang)
+        action  = _action(state, factor, lang)
+
+        report = _render_report(
+            v=v,
+            sing=sing,
+            energy=energy,
+            agent_feedback=agent_feedback,
+            insight_de=insight,
+            action_de=action,
+        )
+
+        return {
+            "report":          report,
+            "state":           state,
+            "factor":          factor,
+            "score":           round(sing, 3),
+            "energy":          round(energy, 3),
+            "vector_4d":       v,
+            "agent_feedback":  agent_feedback,
+            "insight":         insight,
+            "action":          action,
+            "mirror_layer1":   _mirror_layer1(state, factor),
+            "lang":            lang,
+            "llm_scores":      probe["scores"],
+            "llm_vectors":     probe["vectors"],
+            "bus_events":      bus_events,
+        }
+
+    try:
+        remaining = TENZOR_TIMEOUT_MS / 1000.0
+        result = await asyncio.wait_for(_pipeline(), timeout=remaining)
+    except asyncio.TimeoutError:
+        result = _insufficient_payload()
+    except Exception:
+        result = _insufficient_payload()
+
+    result["elapsed_ms"] = int((time.monotonic() - started) * 1000)
+    return result
+
+
+# ════════════════════════════════════════════════════════════════
+# Static config readers — exposed for diagnostic GET endpoints
+# ════════════════════════════════════════════════════════════════
+def load_agents_config() -> dict:
+    try:
+        return json.loads(_AGENTS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {"agents": []}
+
+
+def load_flows_config() -> dict:
+    try:
+        return json.loads(_FLOWS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {"flows": []}
+
+
+def load_orchestrator_prompt() -> str:
+    try:
+        return _PROMPT_PATH.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+:
         return _PROMPT_PATH.read_text(encoding="utf-8")
     except Exception:
         return ""

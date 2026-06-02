@@ -374,6 +374,7 @@ class TenzorInvokeResponse(BaseModel):
     action:          str
     lang:            str
     elapsed_ms:      int
+    mirror_layer1:   str = ""   # plain-language Layer-1 Spiegel (no tech terms)
     history_id:      Optional[str] = None
 
 
@@ -727,6 +728,7 @@ async def tenzor_invoke_endpoint(payload: TenzorInvokeRequest):
         agent_feedback=result["agent_feedback"],
         insight=result["insight"],
         action=result["action"],
+        mirror_layer1=result.get("mirror_layer1", ""),
         lang=result.get("lang", lang),
         elapsed_ms=int(result["elapsed_ms"]),
         history_id=history_id,

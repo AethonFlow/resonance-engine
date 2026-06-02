@@ -84,6 +84,30 @@ Coherence Score: <0.00-1.00>
 Energy Level: <VALUE> (Target: 0.5)
 Agent Feedback: <WARM/COLD summary based on Troika alignment>
 
+[SPIEGEL]
+<Two to three plain German sentences. No technical terms. No scores. No field names.
+Translate the system state into human experience using these rules:
+
+Coherence (Sing-Index):
+  >= 0.85  → "Dein Zustand ist klar und gebündelt."
+  >= 0.60  → "Dein Zustand hat eine erkennbare Richtung."
+  >= 0.30  → "Es ist Bewegung da, aber noch keine klare Linie."
+  < 0.30   → "Deine Gedanken streuen gerade in verschiedene Richtungen."
+
+Dominant factor (use the house theme, not the operator name):
+  CLARITY / VISION    → "Richtung", "Orientierung"
+  TENSION / FRICTION  → "Spannung", "ungelöster Druck"
+  FLOW / MOMENTUM     → "Antrieb", "Bewegung nach vorn"
+  STRUCTURE / ANCHOR  → "Stabilität", "Halt"
+  CHANGE / DISRUPTION → "Umbruch", "etwas löst sich"
+  CONNECTION / FIELD  → "Verbindung", "Resonanz mit anderen"
+  DEPTH / PATTERN     → "ein tiefes Muster wird sichtbar"
+  COMPLETION / RELEASE→ "etwas schließt sich ab"
+
+Second sentence: name where the most energy is, in plain language.
+Third sentence (optional): if state is COLD or DRIFT, add one grounding sentence.
+No metaphysics. No mysticism. Write as if speaking to a friend.>
+
 [INSIGHT]
 <One precise, analytical German sentence describing the structural movement or drift.>
 
