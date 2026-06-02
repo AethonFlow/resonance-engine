@@ -1299,4 +1299,3 @@ async def devcompass_analyze(payload: DevCompassRequest):
 
 
 app.include_router(api)
-app.include_router(api)
