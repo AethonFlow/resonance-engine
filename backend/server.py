@@ -75,7 +75,8 @@ load_dotenv()
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
+EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")   # legacy, no longer used
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -181,24 +182,27 @@ def _parse_probe_payload(raw: str) -> dict:
 
 
 async def _run_probe_one_call(user_input: str) -> dict:
-    """Single Claude Haiku 4.5 call returning 8 scored dimensions."""
-    if not EMERGENT_LLM_KEY:
-        return _empty_probe_result("(no LLM key)")
+    """Single Claude Haiku 4.5 call returning 8 scored dimensions (direct Anthropic SDK)."""
+    api_key = ANTHROPIC_API_KEY
+    if not api_key:
+        return _empty_probe_result("(no ANTHROPIC_API_KEY)")
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"sphere-probe-{uuid.uuid4()}",
-            system_message=_PROBE_SYSTEM,
-        ).with_model("anthropic", "claude-haiku-4-5-20251001")
+        import anthropic
+        client_anthropic = anthropic.AsyncAnthropic(api_key=api_key)
         user_text = (
             f'Input:\n"""\n{user_input}\n"""\n\n'
             "Return the JSON object measuring all 8 dimensions."
         )
-        raw = await chat.send_message(UserMessage(text=user_text))
+        message = await client_anthropic.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=512,
+            system=_PROBE_SYSTEM,
+            messages=[{"role": "user", "content": user_text}],
+        )
+        raw = message.content[0].text if message.content else ""
     except Exception as exc:  # noqa: BLE001
         return _empty_probe_result(f"(llm error: {type(exc).__name__})")
-    return _parse_probe_payload(raw if isinstance(raw, str) else str(raw))
+    return _parse_probe_payload(raw)
 
 
 # ════════════════════════════════════════════════════════════════
