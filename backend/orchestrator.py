@@ -180,65 +180,28 @@ def _insight(state: str, factor: str, lang: str = "de") -> str:
     f = _factor_text(factor, lang)
     if lang == "en":
         if state == "NULLSTELLE":
-            return (
-                f"The field rests in the zero-point — all three layers are "
-                f"phase-synchronous; {f} dominates without drift."
-            )
+            return f"The field rests in the zero-point — all three layers are phase-synchronous; {f} dominates without drift."
         if state == "SINGING":
-            return (
-                f"The Troika is singing — ground, modulation and fascia are "
-                f"locked into a trine phase; {f} carries the axis."
-            )
+            return f"The Troika is singing — ground, modulation and fascia are locked into a trine phase; {f} carries the axis."
         if state == "WARM":
-            return (
-                f"The Troika is aligned but not yet sealed; "
-                f"{f} shapes the coherence, though the form is still open."
-            )
+            return f"The Troika is aligned but not yet sealed; {f} shapes the coherence, though the form is still open."
         if state == "DRIFT":
-            return (
-                f"The field is drifting — layer phases are out of full trine; "
-                f"{f} is acting as a destabiliser."
-            )
+            return f"The field is drifting — layer phases are out of full trine; {f} is acting as a destabiliser."
         if state == "COLD":
-            return (
-                f"The field is scattered — no coherent axis has formed; "
-                f"{f} remains isolated."
-            )
-        return (
-            "Input too thin for a resonance reading — the Layer-0 filter "
-            "did not let it through."
-        )
+            return f"The field is scattered — no coherent axis has formed; {f} remains isolated."
+        return "Input too thin for a resonance reading — the Layer-0 filter did not let it through."
 
-    # default: German
     if state == "NULLSTELLE":
-        return (
-            f"Das Feld ruht in der Nullstelle — alle drei Schichten sind "
-            f"phasensynchron; {f} dominiert ohne Drift."
-        )
+        return f"Das Feld ruht in der Nullstelle — alle drei Schichten sind phasensynchron; {f} dominiert ohne Drift."
     if state == "SINGING":
-        return (
-            f"Die Troika singt — Ground, Modulation und Faszien sind in "
-            f"Trine-Phase verschränkt; {f} trägt die Achse."
-        )
+        return f"Die Troika singt — Ground, Modulation und Faszien sind in Trine-Phase verschränkt; {f} trägt die Achse."
     if state == "WARM":
-        return (
-            f"Die Troika ist ausgerichtet, aber noch nicht versiegelt; "
-            f"{f} prägt die Kohärenz, doch die Form ist nicht geschlossen."
-        )
+        return f"Die Troika ist ausgerichtet, aber noch nicht versiegelt; {f} prägt die Kohärenz, doch die Form ist nicht geschlossen."
     if state == "DRIFT":
-        return (
-            f"Das Feld driftet — die Layer-Phasen sind nicht in voller Trine; "
-            f"{f} wirkt destabilisierend."
-        )
+        return f"Das Feld driftet — die Layer-Phasen sind nicht in voller Trine; {f} wirkt destabilisierend."
     if state == "COLD":
-        return (
-            f"Das Feld ist verstreut — keine kohärente Achse hat sich gebildet; "
-            f"{f} bleibt isoliert."
-        )
-    return (
-        "Eingabe zu dünn für eine Resonanzmessung — der Layer-0-Filter "
-        "hat sie nicht durchgelassen."
-    )
+        return f"Das Feld ist verstreut — keine kohärente Achse hat sich gebildet; {f} bleibt isoliert."
+    return "Eingabe zu dünn für eine Resonanzmessung — der Layer-0-Filter hat sie nicht durchgelassen."
 
 
 def _action(state: str, factor: str, lang: str = "de") -> str:
@@ -256,7 +219,6 @@ def _action(state: str, factor: str, lang: str = "de") -> str:
             return "Start with a single, embodied statement — what is moving in you right now?"
         return "Write a complete sentence with a clear intention (≥ 8 chars, ≥ 2 words)."
 
-    # default: German
     if state == "NULLSTELLE":
         return "Halte den Zustand · archiviere den Snapshot, bevor du eine neue Intention sendest."
     if state == "SINGING":
@@ -270,15 +232,12 @@ def _action(state: str, factor: str, lang: str = "de") -> str:
     return "Schreibe einen vollständigen Satz mit klarer Intention (≥ 8 Zeichen, ≥ 2 Wörter)."
 
 
-# Backwards-compatible aliases (used internally)
 def _insight_de(state: str, factor: str) -> str:
     return _insight(state, factor, "de")
 
 
 # ════════════════════════════════════════════════════════════════
 # Layer-1 Mirror — plain human language, no technical terms
-#   Maps (state, factor) → 2-3 German sentences the user actually feels.
-#   Deterministic, zero LLM calls.
 # ════════════════════════════════════════════════════════════════
 _FACTOR_HUMAN_DE: dict[str, str] = {
     "ANALYTICAL_COLDNESS":     "Klarheit und Orientierung",
@@ -308,10 +267,6 @@ _GROUNDING_LINE_DE: dict[str, str] = {
 
 
 def _mirror_layer1(state: str, factor: str) -> str:
-    """
-    Returns 2-3 plain German sentences for the Layer-1 (Spiegel) view.
-    No scores, no field names, no technical language.
-    """
     coherence_line = _COHERENCE_LINE_DE.get(state, "")
     factor_theme   = _FACTOR_HUMAN_DE.get(factor, "")
     grounding      = _GROUNDING_LINE_DE.get(state, "")
@@ -329,11 +284,7 @@ def _action_de(state: str, factor: str) -> str:
     return _action(state, factor, "de")
 
 
-# ════════════════════════════════════════════════════════════════
-# Template renderer — strict, deterministic, no markdown wrappers
-# ════════════════════════════════════════════════════════════════
 def _fmt(x: float, n: int = 4) -> str:
-    """Format with sign-stable fixed decimals (handles -0.0 cleanly)."""
     if x == 0:
         x = 0.0
     return f"{x:.{n}f}"
@@ -368,7 +319,6 @@ def _render_report(
 
 
 def _insufficient_report(lang: str = "de") -> str:
-    """Fail-safe report. Vector collapses to [0,0,0,0]; energy degrades to 0.00."""
     v = [0.0, 0.0, 0.0, 0.0]
     return _render_report(
         v=v,
@@ -384,11 +334,6 @@ def _insufficient_report(lang: str = "de") -> str:
 # Pipeline core
 # ════════════════════════════════════════════════════════════════
 async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Optional[dict]:
-    """
-    Single Gemini Flash call wrapped in asyncio.wait_for(deadline_s).
-    Returns probe-payload dict or None on any failure / timeout.
-    emergent_key parameter kept for signature compatibility but unused.
-    """
     api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
         return None
@@ -400,9 +345,8 @@ async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Opti
         "",
     ]
     for op in ASPECT_OPERATORS:
-        prompt_parts.append(
-            f'  "{op["name"]}": {{"score": float, "marker": str, "vector": int}},'
-        )
+        prompt_parts.append(f'  "{op["name"]}": {{"score": float, "marker": str, "vector": int}},')
+
     prompt_parts += [
         "",
         "score: 0.000–1.000 (three decimals).",
@@ -411,11 +355,7 @@ async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Opti
         "Return only the JSON object. No prose. No markdown. No code fences.",
     ]
     system_prompt = "\n".join(prompt_parts)
-
-    user_text = (
-        f'Input:\n"""\n{text}\n"""\n\n'
-        "Return the JSON object measuring all 8 dimensions."
-    )
+    user_text = f'Input:\n"""\n{text}\n"""\n\nReturn the JSON object measuring all 8 dimensions.'
 
     try:
         import google.generativeai as genai
@@ -434,20 +374,14 @@ async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Opti
             return response.text
 
         raw = await asyncio.wait_for(_call(), timeout=deadline_s)
-        if not isinstance(raw, str):
-            raw = str(raw)
-
-        # Robust JSON extraction — strip markdown fences if present
-        m = re.search(r"\{.*\}", raw, re.DOTALL)
+        m = re.search(r"\{.*\}", str(raw), re.DOTALL)
         if not m:
             return None
         data = json.loads(m.group(0))
         if not isinstance(data, dict):
             return None
 
-        scores: list[float] = []
-        vectors: list[int] = []
-        markers: list[str] = []
+        scores, vectors, markers = [], [], []
         for op in ASPECT_OPERATORS:
             slot = data.get(op["name"])
             if not isinstance(slot, dict):
@@ -455,20 +389,12 @@ async def _run_probe(text: str, *, emergent_key: str, deadline_s: float) -> Opti
                 vectors.append(0)
                 markers.append("")
                 continue
-            try:
-                s_val = float(slot.get("score", 0.5))
-            except Exception:
-                s_val = 0.5
-            scores.append(max(0.0, min(1.0, round(s_val, 3))))
-            try:
-                v_val = int(slot.get("vector", 0))
-            except Exception:
-                v_val = 0
+            scores.append(max(0.0, min(1.0, round(float(slot.get("score", 0.5)), 3))))
+            v_val = int(slot.get("vector", 0))
             vectors.append(v_val if v_val in (-1, 0, 1) else 0)
             markers.append(str(slot.get("marker", ""))[:80])
 
         return {"scores": scores, "vectors": vectors, "markers": markers}
-
     except Exception:
         return None
 
@@ -479,10 +405,6 @@ async def tenzor_invoke(
     emergent_key: Optional[str] = None,
     lang: str = "de",
 ) -> dict:
-    """
-    Execute one full pipeline pass. `lang` may be "de" (default) or "en"
-    and controls the language of the rendered [INSIGHT] / [ACTION] blocks.
-    """
     started = time.monotonic()
     s_in = (input_str or "").strip()[:2000]
     lang = "en" if (lang or "de").lower().startswith("en") else "de"
@@ -503,67 +425,46 @@ async def tenzor_invoke(
         }
 
     async def _pipeline() -> dict:
-        # ── Stage 1: layer-0 gate ─────────────────────────────────
         ok, _reason = layer0_check(s_in)
         if not ok:
             return _insufficient_payload()
 
-        # ── Stage 2: probe (Gemini Flash) ──────────────────────────
         budget_left = (TENZOR_TIMEOUT_MS / 1000.0) - (time.monotonic() - started) - 0.5
         probe_deadline = max(0.5, min(PROBE_BUDGET_MS / 1000.0, budget_left))
-        # emergent_key kept for backwards-compat; Gemini key comes from env
-        probe = await _run_probe(s_in, emergent_key="", deadline_s=probe_deadline)
+        probe = await _run_probe(s_in, emergent_key=emergent_key or "", deadline_s=probe_deadline)
         if probe is None:
             return _insufficient_payload()
 
-        # ── Stage 3: aspect-matrix on canonical baseline ──────────
         aspects = probe_to_aspects(probe)
 
-        # ── Stage 3b: agent feedback loop (cross-pass correction) ─
-        # RESPONSE messages from the previous tenzor pass carry
-        # aspect_score_deltas from agents. Apply them as small
-        # amplitude corrections before physics computation.
-        # This closes the loop: agent perception → delta → state.
         if _get_bus is not None and _MessageType is not None:
             try:
                 delta_map: dict = {}
                 for msg in _get_bus().get_log(12):
                     if msg.type == _MessageType.RESPONSE:
-                        for asp_name, d in msg.content.get(
-                            "aspect_score_deltas", {}
-                        ).items():
-                            delta_map[asp_name] = (
-                                delta_map.get(asp_name, 0.0) + d
-                            )
+                        for asp_name, d in msg.content.get("aspect_score_deltas", {}).items():
+                            delta_map[asp_name] = delta_map.get(asp_name, 0.0) + d
                 if delta_map:
                     from aspects import _AMPL_GAIN as _AG
                     for asp in aspects:
                         raw_d = delta_map.get(asp.name, 0.0)
                         if abs(raw_d) > 0.005:
-                            # clamp per-aspect delta to ±0.15 score units
                             d = max(-0.15, min(0.15, raw_d))
-                            # convert score delta → amplitude space
                             amp_delta = d * 2.0 * _AG
-                            asp.effects.amplitude = max(
-                                -_AG,
-                                min(_AG, asp.effects.amplitude + amp_delta),
-                            )
+                            asp.effects.amplitude = max(-_AG, min(_AG, asp.effects.amplitude + amp_delta))
             except Exception:
-                pass  # never break the pipeline
+                pass
 
         q0, p0, A0 = _canonical_baseline()
         q1, _p1, A1 = apply_aspect_matrix_py(q0, p0, A0, aspects)
 
-        # ── Stage 4: SING INDEX on post-modulation state ──────────
         sing, _R_layer, _T_inter, _C_E = _compute_sing_index(q1, A1)
         sing = max(0.0, min(1.0, sing))
 
-        # ── Stage 5: vector-4D from arg(Z1) ───────────────────────
         theta = _arg_z1(q1)
         v = _vector_4d(theta)
         energy = _energy_level(v)
 
-        # ── Stage 5b: Agent Bus routing (non-blocking) ────────────
         bus_events: list[dict] = []
         if _get_bus is not None:
             try:
@@ -575,93 +476,16 @@ async def tenzor_invoke(
             except Exception:
                 pass  # bus must never break the pipeline
 
-        # ── Stage 6: deterministic resonant-field passthrough ─────
         state, agent_feedback = _state_tag(sing)
         factor = _primary_factor(probe["scores"])
 
-        # ── Stage 7: synthesize strict template (in chosen lang) ──
         insight = _insight(state, factor, lang)
         action  = _action(state, factor, lang)
 
         report = _render_report(
-            v=v,
-            sing=sing,
-            energy=energy,
+            v=v, sing=sing, energy=energy,
             agent_feedback=agent_feedback,
-            insight_de=insight,
-            action_de=action,
-        )
-
-        return {
-            "report":          report,
-            "state":           state,
-            "factor":          factor,
-            "score":           round(sing, 3),
-            "energy":          round(energy, 3),
-            "vector_4d":       v,
-            "agent_feedback":  agent_feedback,
-            "insight":         insight,
-            "action":          action,
-            "mirror_layer1":   _mirror_layer1(state, factor),
-            "lang":            lang,
-            "llm_scores":      probe["scores"],   # 8 operator scores — persisted for drift analysis
-            "llm_vectors":     probe["vectors"],
-            "bus_events":      bus_events,        # AgentBus messages fired this pass
-        }
-
-    try:
-        remaining = TENZOR_TIMEOUT_MS / 1000.0
-        result = await asyncio.wait_for(_pipeline(), timeout=remaining)
-    except asyncio.TimeoutError:
-        result = _insufficient_payload()
-    except Exception:
-        result = _insufficient_payload()
-
-    result["elapsed_ms"] = int((time.monotonic() - started) * 1000)
-    return result
-
-
-# ════════════════════════════════════════════════════════════════
-# Static config readers — exposed for diagnostic GET endpoints
-# ════════════════════════════════════════════════════════════════
-def load_agents_config() -> dict:
-    try:
-        return json.loads(_AGENTS_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {"agents": []}
-
-
-def load_flows_config() -> dict:
-    try:
-        return json.loads(_FLOWS_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {"flows": []}
-
-
-def load_orchestrator_prompt() -> str:
-    try:
-        return _PROMPT_PATH.read_text(encoding="utf-8")
-    except Exception:
-        return ""
-_events = [m.to_dict() for m in msgs]
-            except Exception:
-                pass  # bus must never break the pipeline
-
-        # ── Stage 6: deterministic resonant-field passthrough ─────
-        state, agent_feedback = _state_tag(sing)
-        factor = _primary_factor(probe["scores"])
-
-        # ── Stage 7: synthesize strict template (in chosen lang) ──
-        insight = _insight(state, factor, lang)
-        action  = _action(state, factor, lang)
-
-        report = _render_report(
-            v=v,
-            sing=sing,
-            energy=energy,
-            agent_feedback=agent_feedback,
-            insight_de=insight,
-            action_de=action,
+            insight_de=insight, action_de=action,
         )
 
         return {
@@ -684,8 +508,6 @@ _events = [m.to_dict() for m in msgs]
     try:
         remaining = TENZOR_TIMEOUT_MS / 1000.0
         result = await asyncio.wait_for(_pipeline(), timeout=remaining)
-    except asyncio.TimeoutError:
-        result = _insufficient_payload()
     except Exception:
         result = _insufficient_payload()
 
@@ -694,7 +516,7 @@ _events = [m.to_dict() for m in msgs]
 
 
 # ════════════════════════════════════════════════════════════════
-# Static config readers — exposed for diagnostic GET endpoints
+# Static config readers
 # ════════════════════════════════════════════════════════════════
 def load_agents_config() -> dict:
     try:
@@ -712,10 +534,6 @@ def load_flows_config() -> dict:
 
 def load_orchestrator_prompt() -> str:
     try:
-        return _PROMPT_PATH.read_text(encoding="utf-8")
-    except Exception:
-        return ""
-:
         return _PROMPT_PATH.read_text(encoding="utf-8")
     except Exception:
         return ""
