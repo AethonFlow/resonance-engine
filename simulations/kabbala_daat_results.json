@@ -1,0 +1,718 @@
+{
+  "baseline_10": [
+    {
+      "epoch": 1,
+      "global_coherence": 0.7013,
+      "syncs": 1,
+      "collapse_coherence": 0.6227,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 2,
+      "global_coherence": 0.813,
+      "syncs": 4,
+      "collapse_coherence": 0.7905,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 3,
+      "global_coherence": 0.8465,
+      "syncs": 5,
+      "collapse_coherence": 0.8453,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 4,
+      "global_coherence": 0.8477,
+      "syncs": 5,
+      "collapse_coherence": 0.8475,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 5,
+      "global_coherence": 0.8479,
+      "syncs": 5,
+      "collapse_coherence": 0.8478,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 6,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 7,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 8,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 9,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 10,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 11,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 12,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 13,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 14,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 15,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 16,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 17,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 18,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 19,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 20,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 21,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 22,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 23,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 24,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 25,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 26,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 27,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 28,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 29,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 30,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 31,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 32,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 33,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 34,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 35,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 36,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 37,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 38,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 39,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 40,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 41,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 42,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 43,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 44,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 45,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 46,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 47,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 48,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 49,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 50,
+      "global_coherence": 0.848,
+      "syncs": 5,
+      "collapse_coherence": 0.848,
+      "signal": "CONTINUE"
+    }
+  ],
+  "daat_11": [
+    {
+      "epoch": 1,
+      "global_coherence": 0.7109,
+      "syncs": 1,
+      "collapse_coherence": 0.635,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 2,
+      "global_coherence": 0.8168,
+      "syncs": 4,
+      "collapse_coherence": 0.7949,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 3,
+      "global_coherence": 0.8494,
+      "syncs": 5,
+      "collapse_coherence": 0.8482,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 4,
+      "global_coherence": 0.8506,
+      "syncs": 5,
+      "collapse_coherence": 0.8504,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 5,
+      "global_coherence": 0.8507,
+      "syncs": 5,
+      "collapse_coherence": 0.8505,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 6,
+      "global_coherence": 0.8508,
+      "syncs": 5,
+      "collapse_coherence": 0.8506,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 7,
+      "global_coherence": 0.8508,
+      "syncs": 5,
+      "collapse_coherence": 0.8507,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 8,
+      "global_coherence": 0.8509,
+      "syncs": 5,
+      "collapse_coherence": 0.8508,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 9,
+      "global_coherence": 0.8509,
+      "syncs": 5,
+      "collapse_coherence": 0.8509,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 10,
+      "global_coherence": 0.8509,
+      "syncs": 5,
+      "collapse_coherence": 0.8509,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 11,
+      "global_coherence": 0.8508,
+      "syncs": 5,
+      "collapse_coherence": 0.8508,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 12,
+      "global_coherence": 0.8508,
+      "syncs": 5,
+      "collapse_coherence": 0.8507,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 13,
+      "global_coherence": 0.8506,
+      "syncs": 5,
+      "collapse_coherence": 0.8504,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 14,
+      "global_coherence": 0.8505,
+      "syncs": 5,
+      "collapse_coherence": 0.8502,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 15,
+      "global_coherence": 0.8503,
+      "syncs": 5,
+      "collapse_coherence": 0.8499,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 16,
+      "global_coherence": 0.8502,
+      "syncs": 5,
+      "collapse_coherence": 0.8496,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 17,
+      "global_coherence": 0.85,
+      "syncs": 5,
+      "collapse_coherence": 0.8493,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 18,
+      "global_coherence": 0.8498,
+      "syncs": 5,
+      "collapse_coherence": 0.849,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 19,
+      "global_coherence": 0.8497,
+      "syncs": 5,
+      "collapse_coherence": 0.8487,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 20,
+      "global_coherence": 0.8496,
+      "syncs": 5,
+      "collapse_coherence": 0.8485,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 21,
+      "global_coherence": 0.8495,
+      "syncs": 5,
+      "collapse_coherence": 0.8484,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 22,
+      "global_coherence": 0.8494,
+      "syncs": 5,
+      "collapse_coherence": 0.8483,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 23,
+      "global_coherence": 0.8494,
+      "syncs": 5,
+      "collapse_coherence": 0.8483,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 24,
+      "global_coherence": 0.8495,
+      "syncs": 5,
+      "collapse_coherence": 0.8484,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 25,
+      "global_coherence": 0.8496,
+      "syncs": 5,
+      "collapse_coherence": 0.8485,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 26,
+      "global_coherence": 0.8497,
+      "syncs": 5,
+      "collapse_coherence": 0.8488,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 27,
+      "global_coherence": 0.8499,
+      "syncs": 5,
+      "collapse_coherence": 0.8491,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 28,
+      "global_coherence": 0.8501,
+      "syncs": 5,
+      "collapse_coherence": 0.8495,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 29,
+      "global_coherence": 0.8503,
+      "syncs": 5,
+      "collapse_coherence": 0.8499,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 30,
+      "global_coherence": 0.8506,
+      "syncs": 5,
+      "collapse_coherence": 0.8503,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 31,
+      "global_coherence": 0.8507,
+      "syncs": 5,
+      "collapse_coherence": 0.8506,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 32,
+      "global_coherence": 0.8509,
+      "syncs": 5,
+      "collapse_coherence": 0.8508,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 33,
+      "global_coherence": 0.8509,
+      "syncs": 5,
+      "collapse_coherence": 0.8509,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 34,
+      "global_coherence": 0.8508,
+      "syncs": 5,
+      "collapse_coherence": 0.8508,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 35,
+      "global_coherence": 0.8507,
+      "syncs": 5,
+      "collapse_coherence": 0.8505,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 36,
+      "global_coherence": 0.8505,
+      "syncs": 5,
+      "collapse_coherence": 0.8501,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 37,
+      "global_coherence": 0.8502,
+      "syncs": 5,
+      "collapse_coherence": 0.8497,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 38,
+      "global_coherence": 0.8499,
+      "syncs": 5,
+      "collapse_coherence": 0.8492,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 39,
+      "global_coherence": 0.8497,
+      "syncs": 5,
+      "collapse_coherence": 0.8487,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 40,
+      "global_coherence": 0.8495,
+      "syncs": 5,
+      "collapse_coherence": 0.8484,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 41,
+      "global_coherence": 0.8494,
+      "syncs": 5,
+      "collapse_coherence": 0.8482,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 42,
+      "global_coherence": 0.8493,
+      "syncs": 5,
+      "collapse_coherence": 0.8482,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 43,
+      "global_coherence": 0.8494,
+      "syncs": 5,
+      "collapse_coherence": 0.8483,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 44,
+      "global_coherence": 0.8496,
+      "syncs": 5,
+      "collapse_coherence": 0.8485,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 45,
+      "global_coherence": 0.8497,
+      "syncs": 5,
+      "collapse_coherence": 0.8488,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 46,
+      "global_coherence": 0.8499,
+      "syncs": 5,
+      "collapse_coherence": 0.8492,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 47,
+      "global_coherence": 0.8502,
+      "syncs": 5,
+      "collapse_coherence": 0.8496,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 48,
+      "global_coherence": 0.8504,
+      "syncs": 5,
+      "collapse_coherence": 0.85,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 49,
+      "global_coherence": 0.8506,
+      "syncs": 5,
+      "collapse_coherence": 0.8503,
+      "signal": "CONTINUE"
+    },
+    {
+      "epoch": 50,
+      "global_coherence": 0.8507,
+      "syncs": 5,
+      "collapse_coherence": 0.8506,
+      "signal": "CONTINUE"
+    }
+  ],
+  "attractors": {
+    "10_nodes": 0.848,
+    "11_nodes_with_daat": 0.8507,
+    "delta": 0.0027
+  },
+  "daat_final_state": {
+    "id": 11,
+    "name": "Da'at",
+    "theta": 2.5201,
+    "amplitude": 0.88,
+    "resonance": 0.8505
+  }
+}

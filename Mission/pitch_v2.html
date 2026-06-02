@@ -335,50 +335,7 @@
     opacity: 1;
   }
 
-  /* ── API KEY ── */
-  .api-key-block {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 18px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .api-key-block label {
-    font-size: 0.72rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .api-key-block input {
-    flex: 1;
-    min-width: 200px;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 14px;
-    color: var(--text);
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .api-key-block input:focus { border-color: var(--cyan); }
-
-  .api-key-hint {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    width: 100%;
-    margin-top: 4px;
-  }
+  /* ── API KEY — removed (key configured in script) ── */
 
   /* ── CHAT ── */
   .chat-window {
@@ -685,23 +642,11 @@
     Modus: <span id="select-mode-label">Automatisch</span> — Agent wird anhand deiner Eingabe ausgewählt
   </div>
 
-  <!-- API KEY -->
-  <div class="api-key-block">
-    <label>Anthropic API-Key</label>
-    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off"
-      oninput="onApiKeyChange()" />
-    <div class="api-key-hint">
-      Dein Key verlässt diesen Browser nicht. Erforderlich für Live-Antworten der Agenten.
-      <a href="https://console.anthropic.com/settings/keys" target="_blank"
-         style="color:var(--cyan);text-decoration:none;">Key holen ↗</a>
-    </div>
-  </div>
-
   <!-- STATUS BAR -->
   <div class="status-bar">
     <div>
       <span class="status-dot" id="status-dot"></span>
-      <span id="status-text">API-Key eingeben, um Agenten zu aktivieren</span>
+      <span id="status-text">Initialisiere Resonanzfeld …</span>
     </div>
     <div id="model-label" style="font-family:monospace;opacity:0.5">claude-sonnet-4-20250514</div>
   </div>
@@ -787,9 +732,15 @@ const AGENTS = [
 /* ══════════════════════════════════════════════
    STATE
 ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   API CONFIGURATION
+   → Anthropic API-Key hier eintragen
+══════════════════════════════════════════════ */
+const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE'; // ⚠️ Niemals echte Keys ins Repository!
+
 let selectedAgentId = null; // null = auto
 let coherenceScore = 0.42;
-let apiKey = '';
+let apiKey = ANTHROPIC_API_KEY;
 let isThinking = false;
 let messageCount = 0;
 
@@ -948,23 +899,22 @@ function detectAgent(text) {
 /* ══════════════════════════════════════════════
    API KEY
 ══════════════════════════════════════════════ */
-function onApiKeyChange() {
-  apiKey = document.getElementById('api-key-input').value.trim();
+function initApiStatus() {
   const dot = document.getElementById('status-dot');
   const txt = document.getElementById('status-text');
   const btn = document.getElementById('send-btn');
 
-  if (apiKey.startsWith('sk-ant-') && apiKey.length > 20) {
+  if (apiKey && apiKey !== 'YOUR_API_KEY_HERE' && apiKey.startsWith('sk-ant-') && apiKey.length > 20) {
     dot.className = 'status-dot online';
-    txt.textContent = 'Agenten aktiviert — bereit für Resonanz';
+    txt.textContent = 'Agenten aktiviert — Resonanzfeld bereit';
     btn.disabled = false;
-  } else if (apiKey.length > 0) {
+  } else if (apiKey === 'YOUR_API_KEY_HERE') {
     dot.className = 'status-dot error';
-    txt.textContent = 'Ungültiger Key (erwartet: sk-ant-…)';
+    txt.textContent = 'API-Key noch nicht konfiguriert — bitte ANTHROPIC_API_KEY im Script setzen';
     btn.disabled = true;
   } else {
-    dot.className = 'status-dot';
-    txt.textContent = 'API-Key eingeben, um Agenten zu aktivieren';
+    dot.className = 'status-dot error';
+    txt.textContent = 'Ungültiger API-Key (erwartet: sk-ant-…)';
     btn.disabled = true;
   }
 }
@@ -1096,7 +1046,7 @@ async function sendMessage() {
   }
 
   isThinking = false;
-  if (apiKey.startsWith('sk-ant-') && apiKey.length > 20) {
+  if (apiKey && apiKey !== 'YOUR_API_KEY_HERE' && apiKey.startsWith('sk-ant-') && apiKey.length > 20) {
     document.getElementById('send-btn').disabled = false;
   }
   input.focus();
@@ -1126,6 +1076,7 @@ function onInputKeydown(e) {
 ══════════════════════════════════════════════ */
 renderAgents();
 updateCoherence(0.42);
+initApiStatus();
 
 // Animate coherence ring slowly on load
 setTimeout(() => updateCoherence(0.42), 600);
