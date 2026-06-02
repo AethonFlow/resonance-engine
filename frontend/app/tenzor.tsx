@@ -239,6 +239,16 @@ export default function TenzorScreen() {
           {/* RESULT BLOCK */}
           {result && (
             <View style={[styles.resultCard, { borderColor: accent }]}>
+
+              {/* ── SPIEGEL (Ebene 1) — plain language, always visible ── */}
+              {result.mirror_layer1 ? (
+                <View style={[styles.mirrorL1Box, { borderLeftColor: accent }]}>
+                  <Text style={[styles.mirrorL1Text]} testID="tenzor-mirror-l1">
+                    {result.mirror_layer1}
+                  </Text>
+                </View>
+              ) : null}
+
               <View style={styles.resultHead}>
                 <View style={[styles.statePill, { borderColor: accent }]}>
                   <View style={[styles.stateDot, { backgroundColor: accent }]} />
@@ -494,6 +504,17 @@ const styles = StyleSheet.create({
   factorText: { fontFamily: TYPO.monoBold, fontSize: 12, color: COLORS.textPrimary, letterSpacing: 1.2 },
   agentText:  { fontFamily: TYPO.monoBold, fontSize: 12, letterSpacing: 0.5 },
 
+  mirrorL1Box: {
+    paddingVertical: 14, paddingHorizontal: 14,
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    marginBottom: 12,
+  },
+  mirrorL1Text: {
+    fontFamily: TYPO.label, fontSize: 15, color: COLORS.textPrimary,
+    lineHeight: 22, letterSpacing: 0.1,
+  },
   blockBox: {
     paddingVertical: 10, paddingHorizontal: 12,
     borderRadius: 10,

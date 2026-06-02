@@ -91,6 +91,7 @@ export type TenzorInvokeResponseDTO = {
   agent_feedback:  string;
   insight:         string;
   action:          string;
+  mirror_layer1:   string;
   lang:            'de' | 'en';
   elapsed_ms:      number;
   history_id?:     string | null;
