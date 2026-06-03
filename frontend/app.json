@@ -23,6 +23,7 @@
       "package": "com.aethonflow.coherencejournal",
       "versionCode": 2
     },
+    "newArchEnabled": false,
     "web": {
       "favicon": "./assets/favicon.png"
     },
