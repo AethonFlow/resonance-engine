@@ -27,7 +27,13 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-worklets": "0.5.1",
-    "three": "^0.156.0"
+    "three": "^0.156.0",
+    "axios": "^1.7.0",
+    "expo-av": "~15.0.0",
+    "expo-gl": "~15.0.0",
+    "expo-three": "^7.0.0",
+    "react-native-svg": "~15.11.2",
+    "@react-native-async-storage/async-storage": "~2.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
