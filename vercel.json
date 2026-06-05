@@ -1,7 +1,7 @@
 {
-  "installCommand": "cd frontend && yarn install",
-  "buildCommand": "cd frontend && yarn expo export --platform web",
-  "outputDirectory": "frontend/dist",
+  "rootDirectory": "frontend",
+  "buildCommand": "yarn expo export --platform web",
+  "outputDirectory": "dist",
   "framework": null,
   "env": {
     "EXPO_PUBLIC_BACKEND_URL": "https://resonance-engine-production-94bd.up.railway.app"
