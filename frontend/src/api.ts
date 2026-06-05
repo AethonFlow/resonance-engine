@@ -221,6 +221,70 @@ export type DevCompassResponseDTO = {
   elapsed_ms: number;
 };
 
+
+// ── Resonanzgedächtnis DTOs ──────────────────────────────────────────────────
+export type SignaturePoint = { x: number; y: number; t: number };
+
+export type SignatureBBox = {
+  x_min: number; x_max: number;
+  y_min: number; y_max: number;
+  width: number; height: number;
+};
+
+export type ResonanceSignatureDTO = {
+  user_id: string;
+  created_at: string;
+  coherence: number;
+  n_points: number;
+  label: 'synchronized' | 'coherent' | 'transitional' | 'chaotic';
+  symmetry: number;
+  bbox: SignatureBBox;
+  path: SignaturePoint[];
+  v_omega: { re: number; im: number }[];
+};
+
+export type NodeStateDTO = {
+  house_index: number; code: string; title: string;
+  amplitude: number; theta: number; phase_label: string;
+  marker: string; confidence: number;
+};
+
+export type JournalSubmitResponseDTO = {
+  id: string;
+  echo: string;
+  coherence: number;
+  nodes: NodeStateDTO[];
+  cycle: number | null;
+};
+
+export type TrajectoryEntryDTO = {
+  created_at: string;
+  coherence: number;
+  points: { house_index: number; x: number; y: number; r: number; theta: number }[];
+  centroid: { x: number; y: number };
+  resonance_signature: {
+    path: SignaturePoint[];
+    symmetry: number;
+    bbox: SignatureBBox;
+    label: string;
+  };
+};
+
+export type OmegaStateDTO = {
+  coherence: number; entropy: number; energy: number; coupling: number;
+  dominant_mode: number; dominant_phase: number; mu: number;
+  c_target: number | null; label: string;
+};
+
+export type SonifyResponseDTO = {
+  tones: { frequency_hz: number; amplitude: number; stereo_pos: number; eigenvalue: number; mode_index: number; is_dominant: boolean }[];
+  eigenvalues: number[];
+  coherence: number;
+  mu: number;
+  conservation: { H: number; S: number; K: number; C: number; H_norm: number; S_norm: number };
+  omega_state: OmegaStateDTO;
+};
+
 export const API = {
   async root() { return (await api.get('/')).data; },
   async health() { return (await api.get('/health')).data; },
@@ -286,96 +350,6 @@ export const API = {
     return (await api.get('/tenzor/journal', { params: { limit } })).data;
   },
 
-// ── Resonanzgedächtnis DTOs ────────────────────────────────────
-export type SignaturePoint = { x: number; y: number; t: number };
-
-export type SignatureBBox = {
-  x_min: number; x_max: number;
-  y_min: number; y_max: number;
-  width: number; height: number;
-};
-
-export type ResonanceSignatureDTO = {
-  user_id: string;
-  created_at: string;
-  coherence: number;
-  n_points: number;
-  label: 'synchronized' | 'coherent' | 'transitional' | 'chaotic';
-  symmetry: number;
-  bbox: SignatureBBox;
-  path: SignaturePoint[];
-  v_omega: { re: number; im: number }[];
-};
-
-export type NodeStateDTO = {
-  house_index: number; code: string; title: string;
-  amplitude: number; theta: number; phase_label: string;
-  marker: string; confidence: number;
-};
-
-export type JournalSubmitResponseDTO = {
-  id: string;
-  echo: string;
-  coherence: number;
-  nodes: NodeStateDTO[];
-  cycle: number | null;
-};
-
-export type TrajectoryEntryDTO = {
-  created_at: string;
-  coherence: number;
-  points: { house_index: number; x: number; y: number; r: number; theta: number }[];
-  centroid: { x: number; y: number };
-  resonance_signature: {
-    path: SignaturePoint[];
-    symmetry: number;
-    bbox: SignatureBBox;
-    label: string;
-  };
-};
-
-export type OmegaStateDTO = {
-  coherence: number; entropy: number; energy: number; coupling: number;
-  dominant_mode: number; dominant_phase: number; mu: number;
-  c_target: number | null; label: string;
-};
-
-export type SonifyResponseDTO = {
-  tones: { frequency_hz: number; amplitude: number; stereo_pos: number; eigenvalue: number; mode_index: number; is_dominant: boolean }[];
-  eigenvalues: number[];
-  coherence: number;
-  mu: number;
-  conservation: { H: number; S: number; K: number; C: number; H_norm: number; S_norm: number };
-  omega_state: OmegaStateDTO;
-};
-
-
-  // ── Resonanzgedächtnis ───────────────────────────────────────
-  async journalSubmit(text: string, userId = 'anonymous', deltaT = 1.0): Promise<JournalSubmitResponseDTO> {
-    return (await api.post('/journal/submit', { text, user_id: userId, delta_t: deltaT })).data;
-  },
-
-  async resonanceSignature(userId = 'anonymous', nPoints = 256): Promise<ResonanceSignatureDTO> {
-    return (await api.get('/resonance/signature', { params: { user_id: userId, n_points: nPoints } })).data;
-  },
-
-  async resonanceHistory(userId = 'anonymous', limit = 30): Promise<{ user_id: string; count: number; entries: unknown[] }> {
-    return (await api.get('/resonance/history', { params: { user_id: userId, limit } })).data;
-  },
-
-  async resonanceTrajectory(userId = 'anonymous', limit = 20): Promise<{ user_id: string; count: number; trajectory: TrajectoryEntryDTO[] }> {
-    return (await api.get('/resonance/trajectory', { params: { user_id: userId, limit } })).data;
-  },
-
-  async resonanceSonify(userId = 'anonymous', limit = 10): Promise<SonifyResponseDTO> {
-    return (await api.post('/resonance/sonify', { user_id: userId, limit })).data;
-  },
-
-  async resonanceOmega(userId = 'anonymous', cTarget = 0.72): Promise<unknown> {
-    return (await api.post('/resonance/omega', { user_id: userId, c_target: cTarget })).data;
-  },
-
-
   // ── TheOrbit V6 ──────────────────────────────────────────────
   async orbitInvoke(
     input: string,
@@ -398,4 +372,25 @@ export type SonifyResponseDTO = {
       await api.post('/devcompass/analyze', { idea, lang: opts?.lang ?? 'de' }, { timeout: 12_000 })
     ).data;
   },
+
+  // ── Resonanzgedächtnis ───────────────────────────────────────
+  async journalSubmit(text: string, userId = 'anonymous', deltaT = 1.0): Promise<JournalSubmitResponseDTO> {
+    return (await api.post('/journal/submit', { text, user_id: userId, delta_t: deltaT })).data;
+  },
+  async resonanceSignature(userId = 'anonymous', nPoints = 256): Promise<ResonanceSignatureDTO> {
+    return (await api.get('/resonance/signature', { params: { user_id: userId, n_points: nPoints } })).data;
+  },
+  async resonanceHistory(userId = 'anonymous', limit = 30): Promise<{ user_id: string; count: number; entries: unknown[] }> {
+    return (await api.get('/resonance/history', { params: { user_id: userId, limit } })).data;
+  },
+  async resonanceTrajectory(userId = 'anonymous', limit = 20): Promise<{ user_id: string; count: number; trajectory: TrajectoryEntryDTO[] }> {
+    return (await api.get('/resonance/trajectory', { params: { user_id: userId, limit } })).data;
+  },
+  async resonanceSonify(userId = 'anonymous', limit = 10): Promise<SonifyResponseDTO> {
+    return (await api.post('/resonance/sonify', { user_id: userId, limit })).data;
+  },
+  async resonanceOmega(userId = 'anonymous', cTarget = 0.72): Promise<unknown> {
+    return (await api.post('/resonance/omega', { user_id: userId, c_target: cTarget })).data;
+  },
+
 };
