@@ -630,6 +630,15 @@ export default function SphereScreen() {
           >
             <Ionicons name="time-outline" size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="btn-resonance"
+            style={[styles.sideBtn, { borderColor: COLORS.lime }]}
+            onPress={() => router.push('/resonance')}
+          >
+            <Ionicons name="flower-outline" size={18} color={COLORS.lime} />
+            <Text style={[styles.sideBtnText, { color: COLORS.lime }]}>SIG</Text>
+          </TouchableOpacity>
         </View>
 
         {/* BOTTOM */}

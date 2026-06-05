@@ -31,7 +31,8 @@ export default function RootLayout() {
               animation: 'fade',
             }}
           >
-            <Stack.Screen name="orbit" options={{ title: 'TheOrbit' }} />
+            <Stack.Screen name="orbit"     options={{ title: 'TheOrbit' }} />
+            <Stack.Screen name="resonance" options={{ title: 'Resonanz-Signatur' }} />
           </Stack>
           <OnboardingOverlay />
         </SettingsProvider>

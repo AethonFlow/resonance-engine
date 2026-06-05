@@ -2,10 +2,11 @@
 THE SPHERE – Resonance Engine · Backend (Coherence Engine v0.3)
 
 Strict architecture:
-  * houses.py  — stable lifecycle topology (NEVER modified by probes)
-  * aspects.py — measurement operators + Aspect Matrix + Project Mirror
-  * server.py  — FastAPI surface; the Aspect Matrix is the ONLY bridge between
-                 probe output and any state mutation.
+  * houses.py           — stable lifecycle topology (NEVER modified by probes)
+  * aspects.py          — measurement operators + Aspect Matrix + Project Mirror
+  * journal_extractor.py — Logbuch-Text → (θ_n, A_n) pro Haus (Haiku single-pass)
+  * omega_engine.py     — Omega-Kollaps + T_Ω-Spektralfilter + Sonifikation
+  * server.py           — FastAPI surface
 
 Endpoints:
   /api/                         root + houses metadata + engine version
@@ -21,6 +22,12 @@ Endpoints:
 
   /api/probe                    single Haiku call returning 8 measurement scores
   /api/tune                     end-to-end:  Layer-0 → probe → aspects → mirror
+
+  /api/journal/submit           Logbuch-Text → NodeStates + Kalibrierungsecho
+  /api/resonance/history        Zeitreihe der Knotenzustände eines Nutzers
+  /api/resonance/echo           Aktuelles Resonanzfeld + Kohärenz-Timeline
+  /api/resonance/sonify         Sonifikation des aktuellen Zustands
+  /api/resonance/omega          Omega-Kollaps ausführen (Spiralübergang)
 """
 
 from __future__ import annotations
@@ -69,6 +76,19 @@ try:
     _ORBIT_AVAILABLE = True
 except ImportError:
     _ORBIT_AVAILABLE = False
+
+try:
+    from journal_extractor import extract_journal, JournalExtraction
+    from omega_engine import (
+    run_omega_collapse, OmegaCollapseResult, build_adjacency_from_history,
+    sonify_state, build_T_omega, to_cartesian,
+    compute_conservation_quantities, ConservationQuantities, OmegaState as _OmegaState,
+    generate_epicycle_path as _gen_epicycle, resonance_signature as _resonance_sig,
+)
+    import numpy as _np
+    _RESONANCE_MEMORY_AVAILABLE = True
+except ImportError:
+    _RESONANCE_MEMORY_AVAILABLE = False
 
 load_dotenv()
 
@@ -1296,6 +1316,444 @@ async def devcompass_analyze(payload: DevCompassRequest):
         "action":          result.get("action", ""),
         "elapsed_ms":      result.get("elapsed_ms", 0),
     }
+
+
+# ════════════════════════════════════════════════════════════════
+# Resonanzgedächtnis — Journal · Echo · Sonifikation · Omega-Kollaps
+# ════════════════════════════════════════════════════════════════
+
+class JournalSubmitRequest(BaseModel):
+    text: str = Field(..., min_length=5, max_length=5000)
+    user_id: str = Field(default="anonymous", max_length=128)
+    delta_t: float = Field(default=1.0, ge=0.1, le=168.0)
+
+
+class NodeStateDTO(BaseModel):
+    house_index: int
+    code:        str
+    title:       str
+    amplitude:   float
+    theta:       float
+    phase_label: str
+    marker:      str
+    confidence:  float
+
+
+class JournalSubmitResponse(BaseModel):
+    id:        str
+    echo:      str
+    coherence: float
+    nodes:     List[NodeStateDTO]
+    cycle:     Optional[int]
+
+
+class ResonanceEchoResponse(BaseModel):
+    user_id:          str
+    coherence_now:    float
+    coherence_series: List[dict]
+    dominant_houses:  List[dict]
+    entry_count:      int
+    last_entry_at:    Optional[str]
+    omega_events:     List[dict]
+
+
+class SonifyRequest(BaseModel):
+    user_id: str = Field(default="anonymous")
+    limit:   int = Field(default=10, ge=2, le=50)
+
+
+class SonifyResponse(BaseModel):
+    tones:        List[dict]
+    eigenvalues:  List[float]
+    coherence:    float
+    mu:           float
+    conservation: dict
+    omega_state:  dict
+
+
+class OmegaRequest(BaseModel):
+    user_id:  str           = Field(default="anonymous")
+    limit:    int           = Field(default=12, ge=2, le=50)
+    c_target: Optional[float] = Field(
+        default=0.72,
+        ge=0.0, le=1.0,
+        description=(
+            "Sollkohärenz für Edge-of-Chaos-Filter: μ = |C - c_target|. "
+            "None → legacy μ = 1 - C."
+        ),
+    )
+
+
+class OmegaResponse(BaseModel):
+    phases_neu:       List[float]
+    amplitudes_neu:   List[float]
+    coherence_before: float
+    coherence_after:  float
+    tones:            List[dict]
+    eigenvalues:      List[float]
+    mu:               float
+    entry_id:         Optional[str]
+    conservation:     dict
+    omega_state:      dict
+
+
+@api.post("/journal/submit", response_model=JournalSubmitResponse)
+async def journal_submit(payload: JournalSubmitRequest):
+    """Logbuch-Text -> Knotenzustände + Kalibrierungsecho (Haiku single-pass)."""
+    if not _RESONANCE_MEMORY_AVAILABLE:
+        raise HTTPException(503, "Resonanzgedächtnis nicht verfügbar")
+
+    extraction = await extract_journal(payload.text, ANTHROPIC_API_KEY)
+    cycle_count = await db.journal_entries.count_documents({"user_id": payload.user_id})
+    extraction.cycle = int(cycle_count // 12) + 1
+
+    doc = extraction.to_db_doc(payload.user_id, payload.delta_t)
+    await db.journal_entries.insert_one(doc)
+
+    return JournalSubmitResponse(
+        id=doc["id"],
+        echo=extraction.echo,
+        coherence=extraction.coherence,
+        nodes=[
+            NodeStateDTO(
+                house_index=n.house_index, code=n.code, title=n.title,
+                amplitude=n.amplitude, theta=n.theta, phase_label=n.phase_label,
+                marker=n.marker, confidence=n.confidence,
+            )
+            for n in extraction.nodes
+        ],
+        cycle=extraction.cycle,
+    )
+
+
+@api.get("/resonance/history")
+async def resonance_history(user_id: str = "anonymous", limit: int = 30):
+    """Zeitreihe der Knotenzustände eines Nutzers (neueste zuerst)."""
+    limit = max(1, min(100, limit))
+    docs = (
+        await db.journal_entries
+        .find({"user_id": user_id}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(limit)
+    )
+    return {"user_id": user_id, "count": len(docs), "entries": docs}
+
+
+@api.get("/resonance/echo", response_model=ResonanceEchoResponse)
+async def resonance_echo(user_id: str = "anonymous", days: int = 30):
+    """Resonanz-Echo: Kohaerenz-Timeline + dominante Haeuser + Omega-Ereignisse."""
+    days = max(1, min(365, days))
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    docs = (
+        await db.journal_entries
+        .find({"user_id": user_id, "created_at": {"$gte": cutoff}}, {"_id": 0})
+        .sort("created_at", 1)
+        .to_list(500)
+    )
+
+    if not docs:
+        return ResonanceEchoResponse(
+            user_id=user_id, coherence_now=0.0, coherence_series=[],
+            dominant_houses=[], entry_count=0, last_entry_at=None, omega_events=[],
+        )
+
+    coherence_series = [
+        {"created_at": d["created_at"], "coherence": d.get("coherence", 0.0)}
+        for d in docs
+    ]
+
+    house_amp: dict[int, list[float]] = {i: [] for i in range(1, 9)}
+    house_meta: dict[int, str] = {}
+    for d in docs:
+        for node in d.get("node_states", []):
+            hi = node.get("house_index")
+            if hi:
+                house_amp[hi].append(node.get("amplitude", 0.0))
+                house_meta[hi] = node.get("title", "")
+
+    dominant_houses = sorted([
+        {
+            "house_index":   hi,
+            "title":         house_meta.get(hi, ""),
+            "avg_amplitude": round(sum(amps) / len(amps), 3) if amps else 0.0,
+        }
+        for hi, amps in house_amp.items() if amps
+    ], key=lambda x: x["avg_amplitude"], reverse=True)
+
+    omega_events = [
+        {
+            "created_at":       d["created_at"],
+            "coherence_before": d["omega_collapse"]["coherence_before"],
+            "coherence_after":  d["omega_collapse"]["coherence_after"],
+            "mu":               d["omega_collapse"]["mu"],
+        }
+        for d in docs if d.get("omega_collapse") is not None
+    ]
+
+    return ResonanceEchoResponse(
+        user_id=user_id,
+        coherence_now=docs[-1].get("coherence", 0.0),
+        coherence_series=coherence_series,
+        dominant_houses=dominant_houses,
+        entry_count=len(docs),
+        last_entry_at=docs[-1].get("created_at"),
+        omega_events=omega_events,
+    )
+
+
+@api.post("/resonance/sonify", response_model=SonifyResponse)
+async def resonance_sonify(payload: SonifyRequest):
+    """5-Schichten-Sonifikation: Frequenz + Stereo + Erhaltungsgroessen."""
+    if not _RESONANCE_MEMORY_AVAILABLE:
+        raise HTTPException(503, "omega_engine.py nicht verfuegbar")
+
+    docs = (
+        await db.journal_entries
+        .find({"user_id": payload.user_id}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(payload.limit)
+    )
+    if not docs:
+        raise HTTPException(404, f"Keine Eintraege fuer user_id={payload.user_id!r}")
+
+    latest = docs[0]
+    C_now = float(latest.get("coherence", 0.5))
+    W = build_adjacency_from_history(list(reversed(docs)))
+
+    # Phasen und Amplituden des letzten Eintrags fuer Stereo
+    nodes = sorted(latest.get("node_states", []), key=lambda n: n["house_index"])
+    phases_now = [n["theta"] for n in nodes] if len(nodes) == 8 else None
+
+    W_sym = (_np.array(W) + _np.array(W).conj().T) / 2.0
+    eigenvalues = _np.linalg.eigvalsh(W_sym).real
+    amplitudes_now = [n["amplitude"] for n in nodes] if len(nodes) == 8 else [C_now] * 8
+
+    # Erhaltungsgroessen
+    cons = compute_conservation_quantities(
+        phases_now or [0.0] * 8,
+        amplitudes_now,
+        W,
+    )
+
+    # 5-Schichten-Sonifikation mit Stereo
+    tones = sonify_state(eigenvalues, C_now, phases=phases_now)
+    from omega_engine import compute_mu, C_TARGET_DEFAULT
+    mu = compute_mu(C_now, C_TARGET_DEFAULT)
+
+    return SonifyResponse(
+        tones=[
+            {
+                "frequency_hz": t.frequency_hz,
+                "amplitude":    t.amplitude,
+                "stereo_pos":   t.stereo_pos,
+                "eigenvalue":   t.eigenvalue,
+                "mode_index":   t.mode_index,
+                "is_dominant":  t.is_dominant,
+            }
+            for t in tones
+        ],
+        eigenvalues=[round(float(ev), 4) for ev in eigenvalues],
+        coherence=round(C_now, 4),
+        mu=round(mu, 4),
+        conservation={
+            "H": cons.H, "S": cons.S, "K": cons.K, "C": cons.C,
+            "H_norm": cons.H_norm, "S_norm": cons.S_norm,
+        },
+        omega_state={
+            "coherence": round(C_now, 4),
+            "entropy":   round(cons.S_norm, 4),
+            "energy":    round(cons.H_norm, 4),
+            "coupling":  round(cons.K, 4),
+            "mu":        round(mu, 4),
+            "label":     (
+                "synchronized" if C_now >= 0.75 and cons.S_norm < 0.4
+                else "coherent" if C_now >= 0.55
+                else "chaotic" if cons.S_norm >= 0.75
+                else "dispersed" if C_now < 0.25
+                else "transitional"
+            ),
+        },
+    )
+
+
+@api.post("/resonance/omega", response_model=OmegaResponse)
+async def resonance_omega(payload: OmegaRequest):
+    """Omega-Kollaps: T_Omega-Transformation -> Startbedingungen naechste Spiralwindung."""
+    if not _RESONANCE_MEMORY_AVAILABLE:
+        raise HTTPException(503, "omega_engine.py nicht verfuegbar")
+
+    docs = (
+        await db.journal_entries
+        .find({"user_id": payload.user_id}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(payload.limit)
+    )
+    if len(docs) < 2:
+        raise HTTPException(400, "Mindestens 2 Eintraege fuer Omega-Kollaps benoetigt")
+
+    latest = docs[0]
+    nodes = sorted(latest.get("node_states", []), key=lambda n: n["house_index"])
+    if len(nodes) != 8:
+        raise HTTPException(422, "Letzter Eintrag enthaelt nicht 8 Knotenzustaende")
+
+    phases = [n["theta"] for n in nodes]
+    amplitudes = [n["amplitude"] for n in nodes]
+    result = run_omega_collapse(
+        phases, amplitudes,
+        history=list(reversed(docs)),
+        c_target=payload.c_target,
+    )
+
+    await db.journal_entries.update_one(
+        {"id": latest["id"]},
+        {"$set": {"omega_collapse": result.to_db_doc()}},
+    )
+
+    return OmegaResponse(
+        phases_neu=result.phases_neu,
+        amplitudes_neu=result.amplitudes_neu,
+        coherence_before=result.coherence_before,
+        coherence_after=result.coherence_after,
+        tones=[
+            {
+                "frequency_hz": t.frequency_hz,
+                "amplitude":    t.amplitude,
+                "stereo_pos":   t.stereo_pos,
+                "eigenvalue":   t.eigenvalue,
+                "mode_index":   t.mode_index,
+                "is_dominant":  t.is_dominant,
+            }
+            for t in result.tones
+        ],
+        eigenvalues=result.eigenvalues,
+        mu=result.mu,
+        entry_id=latest.get("id"),
+        conservation={
+            "H": result.conservation.H,
+            "S": result.conservation.S,
+            "K": result.conservation.K,
+            "C": result.conservation.C,
+            "H_norm": result.conservation.H_norm,
+            "S_norm": result.conservation.S_norm,
+        },
+        omega_state=result.omega_state.to_dict(),
+    )
+
+
+
+@api.get("/resonance/trajectory")
+async def resonance_trajectory(user_id: str = "anonymous", limit: int = 20):
+    """
+    Kartesische Spiraldaten fuer alle Eintraege eines Nutzers.
+
+    Gibt pro Eintrag die (x, y)-Koordinaten aller 8 Knoten zurueck.
+    x = A * cos(theta), y = A * sin(theta)
+
+    Verwendung: Spiralvisualisierung im Frontend (Polar -> Kartesisch).
+    """
+    limit = max(1, min(100, limit))
+    docs = (
+        await db.journal_entries
+        .find({"user_id": user_id}, {"_id": 0})
+        .sort("created_at", 1)
+        .to_list(limit)
+    )
+    if not docs:
+        return {"user_id": user_id, "count": 0, "trajectory": []}
+
+    import math as _math
+    trajectory = []
+    for d in docs:
+        nodes = sorted(d.get("node_states", []), key=lambda n: n["house_index"])
+        if len(nodes) != 8:
+            continue
+        phases = [n["theta"] for n in nodes]
+        amplitudes = [n["amplitude"] for n in nodes]
+        sig = _resonance_sig(phases, amplitudes, n_points=128)
+        trajectory.append({
+            "created_at":        d["created_at"],
+            "coherence":         d.get("coherence", 0.0),
+            "points":            to_cartesian(phases, amplitudes),
+            "centroid": {
+                "x": round(sum(a * _math.cos(p) for p, a in zip(phases, amplitudes)) / 8, 4),
+                "y": round(sum(a * _math.sin(p) for p, a in zip(phases, amplitudes)) / 8, 4),
+            },
+            "resonance_signature": {
+                "path":     sig["path"],
+                "symmetry": sig["symmetry"],
+                "bbox":     sig["bbox"],
+                "label":    (
+                    "synchronized" if sig["symmetry"] >= 0.80
+                    else "coherent"  if sig["symmetry"] >= 0.55
+                    else "transitional" if sig["symmetry"] >= 0.35
+                    else "chaotic"
+                ),
+            },
+        })
+
+    return {
+        "user_id":    user_id,
+        "count":      len(trajectory),
+        "trajectory": trajectory,
+    }
+
+
+@api.get("/resonance/signature")
+async def resonance_signature_endpoint(user_id: str = "anonymous", n_points: int = 256):
+    """
+    Resonanz-Signatur (Fourier-Blüte) des aktuellen Zustands.
+
+    Gibt die geschlossene Epizyklenkurve des letzten Journal-Eintrags zurueck.
+    Diese Kurve ist die visuelle Signatur des Resonanzfeldes:
+
+      synchronized  -> hochsymmetrisches Muster
+      coherent      -> runde, leicht asymmetrische Form
+      transitional  -> offene Spirale
+      chaotic       -> verschlungene, unregelmäßige Kurve
+
+    n_points: Anzahl Punkte auf der Kurve (64–512, default 256)
+    """
+    if not _RESONANCE_MEMORY_AVAILABLE:
+        raise HTTPException(503, "omega_engine.py nicht verfuegbar")
+
+    n_points = max(64, min(512, n_points))
+
+    doc = await db.journal_entries.find_one(
+        {"user_id": user_id},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    if not doc:
+        raise HTTPException(404, f"Keine Eintraege fuer user_id={user_id!r}")
+
+    nodes = sorted(doc.get("node_states", []), key=lambda n: n["house_index"])
+    if len(nodes) != 8:
+        raise HTTPException(422, "Letzter Eintrag enthaelt nicht 8 Knotenzustaende")
+
+    phases     = [n["theta"]     for n in nodes]
+    amplitudes = [n["amplitude"] for n in nodes]
+
+    sig = _resonance_sig(phases, amplitudes, n_points=n_points)
+
+    label = (
+        "synchronized" if sig["symmetry"] >= 0.80
+        else "coherent"    if sig["symmetry"] >= 0.55
+        else "transitional" if sig["symmetry"] >= 0.35
+        else "chaotic"
+    )
+
+    return {
+        "user_id":    user_id,
+        "created_at": doc["created_at"],
+        "coherence":  doc.get("coherence", 0.0),
+        "n_points":   n_points,
+        "label":      label,
+        "symmetry":   sig["symmetry"],
+        "bbox":       sig["bbox"],
+        "path":       sig["path"],
+        "v_omega":    sig["v_omega"],
+    }
+
 
 
 app.include_router(api)
