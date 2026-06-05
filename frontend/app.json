@@ -24,8 +24,10 @@
       "versionCode": 2
     },
     "newArchEnabled": false,
+    "platforms": ["ios", "android", "web"],
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router",
