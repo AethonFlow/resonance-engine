@@ -1,0 +1,6 @@
+{
+  "name": "resonance-engine",
+  "scripts": {
+    "build": "cd frontend && yarn install && yarn expo export --platform web"
+  }
+}
