@@ -1,5 +1,6 @@
 {
-  "buildCommand": "cd frontend && npx expo export --platform web",
+  "installCommand": "cd frontend && yarn install",
+  "buildCommand": "cd frontend && yarn expo export --platform web",
   "outputDirectory": "frontend/dist",
   "framework": null,
   "env": {
