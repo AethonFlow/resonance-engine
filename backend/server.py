@@ -1,5 +1,5 @@
 """
-THE SPHERE – Resonance Engine · Backend (Coherence Engine v0.3)
+THE SPHERE – Resonance Engine · Backend (Coherence Engine v2.0)
 
 Strict architecture:
   * houses.py           — stable lifecycle topology (NEVER modified by probes)
@@ -437,7 +437,7 @@ async def root():
             for h in HOUSE_META
         ],
         "coherence_engine": {
-            "version": "0.3",
+            "version": "2.0",
             "model": "claude-haiku-4-5-20251001",
             "n_threshold": 0.45,
             "probe_mode": "single_call",

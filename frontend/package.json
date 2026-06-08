@@ -1,6 +1,6 @@
 {
   "name": "resonance-engine-frontend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
@@ -12,6 +12,7 @@
   "dependencies": {
     "@expo-google-fonts/jetbrains-mono": "^0.2.3",
     "@expo-google-fonts/space-grotesk": "^0.2.3",
+    "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "~2.2.0",
     "axios": "^1.7.0",
     "expo": "~54.0.0",
@@ -27,11 +28,13 @@
     "expo-status-bar": "~3.0.9",
     "expo-three": "^7.0.0",
     "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~3.19.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-web": "^0.21.0",
     "three": "^0.156.0"
   },
   "devDependencies": {
@@ -41,7 +44,9 @@
   },
   "expo": {
     "install": {
-      "exclude": ["expo-three"]
+      "exclude": [
+        "expo-three"
+      ]
     }
   },
   "private": true
