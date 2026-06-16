@@ -69,8 +69,7 @@ Not a medical product — not a substitute for therapy or diagnosis.
 export default function PrivacyScreen() {
   const router = useRouter();
   const t = useT();
-  const { lang } = require('../src/i18n').useSettings() as { lang: 'de' | 'en' };
-  const body = lang === 'en' ? PRIVACY_EN : PRIVACY_DE;
+  const body = PRIVACY_EN;
   return (
     <SafeAreaView style={styles.root} testID="privacy-root">
       <View style={styles.header}>
