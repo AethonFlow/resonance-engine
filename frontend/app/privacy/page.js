@@ -1,12 +1,4 @@
-export default function Privacy() {
-    return (
-        <main style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
-            <h1>Datenschutzerklärung</h1>
-            <p>Hier steht deine Datenschutzerklärung.</p>
-        </main>
-    );
-}
-export default function Privacy() {
+export default function PrivacyPage() {
     return (
         <main style={{ padding: 20, maxWidth: 900, margin: "0 auto", fontFamily: "sans-serif" }}>
             <h1>Datenschutzerklärung / Privacy Policy</h1>
