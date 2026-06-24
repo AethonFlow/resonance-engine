@@ -2,7 +2,7 @@
   "expo": {
     "name": "TheOrbit – Resonance Instrument",
     "slug": "coherence-journal",
-    "version": "2.0.0",
+    "version": "4.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -21,10 +21,14 @@
         "backgroundColor": "#000000"
       },
       "package": "com.aethonflow.coherencejournal",
-      "versionCode": 3
+      "versionCode": 18
     },
     "newArchEnabled": false,
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
